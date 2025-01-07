@@ -1,5 +1,6 @@
 import {fromHono} from "chanfana";
 import {Hono} from "hono";
+import { dbMiddleware } from "./middlewares";
 import {TaskCreate} from "./endpoints/taskCreate";
 import {TaskDelete} from "./endpoints/taskDelete";
 import {TaskFetch} from "./endpoints/taskFetch";
@@ -10,9 +11,12 @@ const app = new Hono<{
   Bindings: Env
 }>();
 
+// DB service
+app.use("/api/*", dbMiddleware)
+
 // Setup OpenAPI registry
 const openapi = fromHono(app, {
-  docs_url: null,
+  docs_url: '/doc',
 });
 
 // Register OpenAPI endpoints

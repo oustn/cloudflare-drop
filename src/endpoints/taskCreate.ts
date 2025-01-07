@@ -1,6 +1,9 @@
 import { Bool, OpenAPIRoute } from "chanfana";
 import { z } from "zod";
-import { Task } from "../types";
+import {Context} from "hono"
+import {taskCreateSchema, taskSelectSchema, Task, TaskCreateSchema} from '../../data/types'
+import {DbService} from "../../data/services";
+import {tasks} from "../../data/schemas";
 
 export class TaskCreate extends OpenAPIRoute {
 	schema = {
@@ -10,7 +13,7 @@ export class TaskCreate extends OpenAPIRoute {
 			body: {
 				content: {
 					"application/json": {
-						schema: Task,
+						schema: taskCreateSchema,
 					},
 				},
 			},
@@ -24,7 +27,7 @@ export class TaskCreate extends OpenAPIRoute {
 							series: z.object({
 								success: Bool(),
 								result: z.object({
-									task: Task,
+									task: taskSelectSchema,
 								}),
 							}),
 						}),
@@ -34,12 +37,16 @@ export class TaskCreate extends OpenAPIRoute {
 		},
 	};
 
-	async handle(c) {
+	async handle(c: Context) {
 		// Get validated data
 		const data = await this.getValidatedData<typeof this.schema>();
 
 		// Retrieve the validated request body
-		const taskToCreate = data.body;
+		const taskToCreate = data.body
+
+    const db: DbService = c.get('db')
+
+    const task = await db.insertReturning(tasks, taskToCreate)
 
 		// Implement your own object insertion here
 

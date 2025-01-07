@@ -4,19 +4,26 @@
 	"private": true,
 	"type": "module",
 	"scripts": {
-    "predeploy": "npm run build:web",
+		"generate": "drizzle-kit generate --config data/drizzle.config.ts",
+		"predeploy": "npm run build:web && npm run generate && wrangler d1 migrations apply airdrop --remote",
 		"deploy": "wrangler deploy --env staging",
-    "start": "concurrently \"npm run dev:web\" \"npm run dev:app\"",
+		"prestart": "npm run generate && yes | wrangler d1 migrations apply airdrop --local",
+		"start": "concurrently \"npm run dev:web\" \"npm run dev:app\"",
 		"dev:app": "wrangler dev",
 		"dev:web": "vite",
 		"build:web": "tsc -b ./tsconfig.web.json && vite build",
 		"cf-typegen": "wrangler types"
 	},
 	"dependencies": {
+		"@asteasolutions/zod-to-openapi": "^7.3.0",
+		"@hono/zod-openapi": "^0.18.3",
+		"@paralleldrive/cuid2": "^2.2.2",
 		"chanfana": "^2.0.2",
+		"drizzle-orm": "^0.38.3",
+		"drizzle-zod": "^0.6.1",
 		"hono": "^4.4.7",
 		"preact": "^10.25.3",
-		"zod": "^3.23.8"
+		"zod": "^3.24.1"
 	},
 	"devDependencies": {
 		"@cloudflare/workers-types": "^4.20241230.0",
@@ -24,9 +31,10 @@
 		"@types/node": "20.8.3",
 		"@types/service-worker-mock": "^2.0.1",
 		"concurrently": "^9.1.2",
-		"typescript": "~5.6.2",
+		"drizzle-kit": "^0.30.1",
+		"typescript": "^5.7.3",
 		"vite": "^6.0.5",
-		"wrangler": "^3.60.3"
+		"wrangler": "^3.100.0"
 	},
 	"volta": {
 		"node": "20.18.1",
