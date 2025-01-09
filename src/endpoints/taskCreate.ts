@@ -46,7 +46,7 @@ export class TaskCreate extends OpenAPIRoute {
 
     const db: DbService = c.get('db')
 
-    const task = await db.insertReturning(tasks, taskToCreate)
+    // const task = await db.insertReturning(tasks, taskToCreate)
 
 		// Implement your own object insertion here
 
