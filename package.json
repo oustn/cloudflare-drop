@@ -1,53 +1,68 @@
 {
-	"name": "cloudflare-workers-openapi",
-	"version": "0.0.1",
-	"private": true,
-	"type": "module",
-	"scripts": {
-		"generate": "drizzle-kit generate --config data/drizzle.config.ts",
-		"predeploy": "npm run build:web && npm run generate && wrangler d1 migrations apply airdrop --remote",
-		"deploy": "wrangler deploy --env staging",
-		"prestart": "npm run generate && yes | wrangler d1 migrations apply airdrop --local",
-		"start": "concurrently \"npm run dev:web\" \"npm run dev:app\"",
-		"dev:app": "wrangler dev",
-		"dev:web": "vite",
-		"build:web": "tsc -b ./tsconfig.web.json && vite build",
-		"cf-typegen": "wrangler types"
-	},
-	"dependencies": {
-		"@emotion/react": "^11.14.0",
-		"@emotion/styled": "^11.14.0",
-		"@hono/zod-openapi": "^0.18.3",
-		"@mui/icons-material": "^6.3.1",
-		"@mui/lab": "6.0.0-beta.22",
-		"@mui/material": "^6.3.1",
-		"@paralleldrive/cuid2": "^2.2.2",
-		"chanfana": "^2.6.3",
-		"drizzle-orm": "^0.38.3",
-		"drizzle-zod": "^0.6.1",
-		"hono": "^4.4.7",
-		"mobx": "^6.13.5",
-		"mobx-react-lite": "^4.1.0",
-		"preact": "^10.25.3",
-		"zod": "^3.24.1"
-	},
-	"devDependencies": {
-		"@babel/plugin-proposal-decorators": "^7.25.9",
-		"@cloudflare/workers-types": "^4.20241230.0",
-		"@preact/preset-vite": "^2.9.3",
-		"@types/node": "20.8.3",
-		"@types/service-worker-mock": "^2.0.1",
-		"autoprefixer": "^10.4.20",
-		"concurrently": "^9.1.2",
-		"drizzle-kit": "^0.30.1",
-		"postcss": "^8.4.49",
-		"tailwindcss": "^3.4.17",
-		"typescript": "^5.7.3",
-		"vite": "^6.0.5",
-		"wrangler": "^3.100.0"
-	},
-	"volta": {
-		"node": "20.18.1",
-		"pnpm": "9.15.3"
-	}
+  "name": "cloudflare-workers-openapi",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "generate": "drizzle-kit generate --config data/drizzle.config.ts",
+    "predeploy": "npm run build:web && npm run generate && wrangler d1 migrations apply airdrop --remote",
+    "deploy": "wrangler deploy --env staging",
+    "prestart": "npm run generate && yes | wrangler d1 migrations apply airdrop --local",
+    "start": "concurrently \"npm run dev:web\" \"npm run dev:app\"",
+    "dev:app": "wrangler dev",
+    "dev:web": "vite",
+    "build:web": "tsc -b ./tsconfig.web.json && vite build",
+    "cf-typegen": "wrangler types",
+    "lint": "prettier . --write && eslint . --fix",
+    "prepare": "husky"
+  },
+  "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
+    "@hono/zod-openapi": "^0.18.3",
+    "@mui/icons-material": "^6.3.1",
+    "@mui/lab": "6.0.0-beta.22",
+    "@mui/material": "^6.3.1",
+    "@paralleldrive/cuid2": "^2.2.2",
+    "chanfana": "^2.6.3",
+    "drizzle-orm": "^0.38.3",
+    "drizzle-zod": "^0.6.1",
+    "hono": "^4.4.7",
+    "mobx": "^6.13.5",
+    "mobx-react-lite": "^4.1.0",
+    "preact": "^10.25.3",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@babel/plugin-proposal-decorators": "^7.25.9",
+    "@cloudflare/workers-types": "^4.20241230.0",
+    "@eslint/js": "^9.18.0",
+    "@preact/preset-vite": "^2.9.3",
+    "@types/node": "20.8.3",
+    "@types/service-worker-mock": "^2.0.1",
+    "autoprefixer": "^10.4.20",
+    "concurrently": "^9.1.2",
+    "drizzle-kit": "^0.30.1",
+    "eslint": "^9.18.0",
+    "eslint-config-prettier": "^10.0.1",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.4.1",
+    "postcss": "^8.4.49",
+    "prettier": "3.4.2",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.7.3",
+    "typescript-eslint": "^8.21.0",
+    "vite": "^6.0.5",
+    "wrangler": "^3.100.0"
+  },
+  "volta": {
+    "node": "20.18.1",
+    "pnpm": "9.15.3"
+  },
+  "lint-staged": {
+    "*": [
+      "prettier --write",
+      "eslint --fix"
+    ]
+  }
 }

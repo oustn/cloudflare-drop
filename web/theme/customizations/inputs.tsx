@@ -1,4 +1,4 @@
-import { Theme, Components } from '@mui/material/styles';
+import { Theme, Components } from '@mui/material/styles'
 
 export const inputsCustomizations: Components<Theme> = {
   MuiFormControl: {
@@ -24,7 +24,7 @@ export const inputsCustomizations: Components<Theme> = {
         [theme.breakpoints.up('sm')]: {
           flexBasis: 100,
           flexShrink: 0,
-          lineHeight: '3.1em'
+          lineHeight: '3.1em',
         },
       }),
     },
@@ -34,19 +34,19 @@ export const inputsCustomizations: Components<Theme> = {
       input: ({ theme }) => ({
         paddingInline: theme.spacing(1),
         paddingBlock: '0.8em',
-        height: '1.5em'
+        height: '1.5em',
       }),
 
       multiline: {
-        padding: 0
-      }
+        padding: 0,
+      },
     },
   },
   MuiInputBase: {
     styleOverrides: {
       multiline: {
-        padding: 0
-      }
-    }
-  }
+        padding: 0,
+      },
+    },
+  },
 }

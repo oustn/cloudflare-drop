@@ -1,1 +1,1 @@
-export * from "./db.middleware"
+export * from './db.middleware'

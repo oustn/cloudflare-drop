@@ -1,22 +1,19 @@
-import {ThemeProvider, createTheme} from '@mui/material/styles';
-import type {ThemeOptions} from '@mui/material/styles';
-import {colorSchemes, typography, shadows, shape} from './themePrimitives.ts';
+import { ThemeProvider, createTheme } from '@mui/material/styles'
+import type { ThemeOptions } from '@mui/material/styles'
+import { colorSchemes, typography, shadows, shape } from './themePrimitives.ts'
 
 import { inputsCustomizations } from './customizations'
 
 interface AppThemeProps {
-  children: React.ReactNode;
+  children: React.ReactNode
   /**
    * This is for the docs site. You can ignore it or remove it.
    */
-  mode?: "light" | "dark" | "system";
-  themeComponents?: ThemeOptions['components'];
+  mode?: 'light' | 'dark' | 'system'
+  themeComponents?: ThemeOptions['components']
 }
 
-export default function AppTheme({
-                                   children,
-                                   mode
-                                 }: AppThemeProps) {
+export default function AppTheme({ children, mode }: AppThemeProps) {
   const theme = createTheme({
     // For more details about CSS variables configuration, see https://mui.com/material-ui/customization/css-theme-variables/configuration/
     cssVariables: true,
@@ -27,15 +24,10 @@ export default function AppTheme({
     components: {
       ...inputsCustomizations,
     },
-  });
+  })
   return (
-    <ThemeProvider
-      theme={theme}
-      disableTransitionOnChange
-      noSsr
-      defaultMode={mode}
-    >
+    <ThemeProvider theme={theme} disableTransitionOnChange noSsr defaultMode={mode}>
       {children}
     </ThemeProvider>
-  );
+  )
 }

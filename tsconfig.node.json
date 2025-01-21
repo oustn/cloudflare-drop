@@ -20,9 +20,7 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
     "paths": {
-      "@data/*": [
-        "./data/*"
-      ]
+      "@data/*": ["./data/*"]
     }
   },
   "include": ["vite.config.ts"]

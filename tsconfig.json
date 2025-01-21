@@ -12,9 +12,7 @@
     }
   ],
   "compilerOptions": {
-    "@data": [
-      "./data"
-    ],
+    "@data": ["./data"],
     "strict": true
   }
 }
