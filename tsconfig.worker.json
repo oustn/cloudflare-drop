@@ -19,6 +19,7 @@
     "rootDir": ".",
     "skipLibCheck": true,
     "strict": false,
+    "strictNullChecks": true,
     "traceResolution": false,
     "outDir": "",
     "target": "esnext",

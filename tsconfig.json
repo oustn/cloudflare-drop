@@ -10,5 +10,11 @@
     {
       "path": "./tsconfig.worker.json"
     }
-  ]
+  ],
+  "compilerOptions": {
+    "@data": [
+      "./data"
+    ],
+    "strict": true
+  }
 }

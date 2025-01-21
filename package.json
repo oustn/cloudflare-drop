@@ -15,7 +15,6 @@
 		"cf-typegen": "wrangler types"
 	},
 	"dependencies": {
-		"@asteasolutions/zod-to-openapi": "^7.3.0",
 		"@emotion/react": "^11.14.0",
 		"@emotion/styled": "^11.14.0",
 		"@hono/zod-openapi": "^0.18.3",
@@ -23,7 +22,7 @@
 		"@mui/lab": "6.0.0-beta.22",
 		"@mui/material": "^6.3.1",
 		"@paralleldrive/cuid2": "^2.2.2",
-		"chanfana": "^2.0.2",
+		"chanfana": "^2.6.3",
 		"drizzle-orm": "^0.38.3",
 		"drizzle-zod": "^0.6.1",
 		"hono": "^4.4.7",
@@ -33,6 +32,7 @@
 		"zod": "^3.24.1"
 	},
 	"devDependencies": {
+		"@babel/plugin-proposal-decorators": "^7.25.9",
 		"@cloudflare/workers-types": "^4.20241230.0",
 		"@preact/preset-vite": "^2.9.3",
 		"@types/node": "20.8.3",
