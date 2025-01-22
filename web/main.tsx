@@ -1,6 +1,7 @@
 import { render } from 'preact'
 import { StyledEngineProvider } from '@mui/material/styles'
 import CssBaseline from '@mui/material/CssBaseline'
+import { DialogsProvider } from '@toolpad/core/useDialogs'
 
 import AppTheme from './theme/AppTheme'
 import { App } from './App'
@@ -12,7 +13,9 @@ function Main() {
     <StyledEngineProvider injectFirst>
       <AppTheme>
         <CssBaseline enableColorScheme />
-        <App />
+        <DialogsProvider>
+          <App />
+        </DialogsProvider>
       </AppTheme>
     </StyledEngineProvider>
   )

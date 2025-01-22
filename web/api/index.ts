@@ -1,22 +1,3 @@
-interface FileType {
-  code: string
-  filename: string
-  hash: string
-  objectId: string
-  due_date: number
-}
-
-interface FileUploadedType {
-  hash: string
-  code: string
-}
-
-interface ApiResponseType<T> {
-  message: string
-  result: boolean
-  data: T | null
-}
-
 export async function resolveFileByCode(
   code: string,
 ): Promise<ApiResponseType<FileType>> {
@@ -34,4 +15,9 @@ export async function uploadFile(
     body: formData,
   })
   return await response.json()
+}
+
+export async function fetchPlainText(objectId: string): Promise<string> {
+  const response = await fetch(`/files/${objectId}`)
+  return response.text()
 }

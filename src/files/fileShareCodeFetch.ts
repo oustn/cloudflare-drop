@@ -45,6 +45,7 @@ export class FileShareCodeFetch extends Endpoint {
         hash: files.hash,
         objectId: files.objectId,
         due_date: files.due_date,
+        type: files.type,
       })
       .from(files)
       .where(eq(files.code, code))

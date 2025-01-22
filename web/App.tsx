@@ -1,4 +1,5 @@
 import { useState, useRef } from 'preact/hooks'
+import { useDialogs } from '@toolpad/core/useDialogs'
 import Container from '@mui/material/Container'
 import Paper from '@mui/material/Paper'
 import Box from '@mui/material/Box'
@@ -16,7 +17,7 @@ import SendIcon from '@mui/icons-material/Send'
 import FileIcon from '@mui/icons-material/Description'
 import Divider from '@mui/material/Divider'
 
-import { Code, Message, useMessage } from './components'
+import { Code, Message, useMessage, ShareDialog } from './components'
 import './app.css'
 import { resolveFileByCode, uploadFile } from './api'
 
@@ -35,6 +36,7 @@ const VisuallyHiddenInput = styled('input')({
 export function App() {
   const [tab, setTab] = useState('text')
   const [messageProps, message] = useMessage()
+  const dialogs = useDialogs()
 
   const handleChangeTab = (_event: unknown, newValue: string) => {
     setTab(newValue)
@@ -49,11 +51,12 @@ export function App() {
 
     try {
       const data = await resolveFileByCode(code)
-      if (!data.result) {
+      if (!data.result || !data.data) {
         message.error(data.message)
         return
       }
-      // todo
+      // 打开弹窗
+      await dialogs.open(ShareDialog, { ...data.data, message })
     } catch (e) {
       const data = (e as { message: string }).message || JSON.stringify(e)
       message.error(data)
