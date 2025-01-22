@@ -12,12 +12,19 @@ export class Endpoint extends OpenAPIRoute {
     return c.env.file_drops
   }
 
-  error(payload: unknown, code = 400) {
-    return new Response(JSON.stringify(payload), {
-      status: code,
-      headers: {
-        'Content-Type': 'application/json; utf-8',
-      },
-    })
+  error(message: string) {
+    return {
+      message,
+      result: false,
+      data: null,
+    }
+  }
+
+  success(data: unknown) {
+    return {
+      message: 'ok',
+      result: true,
+      data,
+    }
   }
 }

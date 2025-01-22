@@ -3,6 +3,7 @@ import mine from 'mime'
 import { createId, init } from '@paralleldrive/cuid2'
 import { Endpoint } from '../endpoint'
 import { z } from 'zod'
+import dayjs from 'dayjs'
 
 import { files, InsertFileType } from '../../data/schemas'
 
@@ -59,12 +60,7 @@ export class FileCreate extends Endpoint {
     }
 
     if (!data || data.byteLength === 0) {
-      return this.error(
-        {
-          message: 'File data missing',
-        },
-        400,
-      )
+      return this.error('File data missing')
     }
 
     const kv = this.getKV(c)
@@ -84,15 +80,18 @@ export class FileCreate extends Endpoint {
       type,
       hash,
       code: shareCode,
-      due_date: new Date(),
+      due_date: dayjs().add(1, 'hour').toDate(),
     }
 
     await db.insert(files).values(insert)
 
     return {
-      hash,
-      key,
-      code: shareCode,
+      message: 'ok',
+      result: true,
+      data: {
+        hash,
+        code: shareCode,
+      },
     }
   }
 }

@@ -49,21 +49,14 @@ export class FileShareCodeFetch extends Endpoint {
       .from(files)
       .where(eq(files.code, code))
     if (!file) {
-      return this.error(
-        {
-          message: '分享码无效',
-        },
-        404,
-      )
+      return this.error('分享码无效')
     }
 
     const day = dayjs(file.due_date)
     if (day.isBefore(dayjs())) {
-      return this.error({
-        message: '分享已过期',
-      })
+      return this.error('分享已过期')
     }
 
-    return file
+    return this.success(file)
   }
 }

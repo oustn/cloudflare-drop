@@ -38,12 +38,12 @@ export class FileFetch extends Endpoint {
     const kv = this.getKV(c)
     const file = await kv.get(objectId, 'arrayBuffer')
     if (!file) {
-      return this.error(
-        {
-          message: 'Not found',
+      return new Response('Not found', {
+        status: 404,
+        headers: {
+          'Content-Type': 'plain/text',
         },
-        404,
-      )
+      })
     }
 
     return new Response(file, {
