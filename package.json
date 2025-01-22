@@ -1,5 +1,5 @@
 {
-  "name": "cloudflare-workers-openapi",
+  "name": "cloudflare-drop",
   "version": "0.0.1",
   "private": true,
   "type": "module",
@@ -25,9 +25,11 @@
     "@mui/material": "^6.3.1",
     "@paralleldrive/cuid2": "^2.2.2",
     "chanfana": "^2.6.3",
+    "dayjs": "^1.11.13",
     "drizzle-orm": "^0.38.3",
     "drizzle-zod": "^0.6.1",
     "hono": "^4.4.7",
+    "mime": "^4.0.6",
     "mobx": "^6.13.5",
     "mobx-react-lite": "^4.1.0",
     "preact": "^10.25.3",
@@ -62,7 +64,7 @@
   "lint-staged": {
     "*": [
       "prettier --write",
-      "eslint --fix"
+      "eslint --fix --no-warn-ignored"
     ]
   }
 }

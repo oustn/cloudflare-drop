@@ -5,6 +5,7 @@ import { TaskCreate } from './endpoints/taskCreate'
 import { TaskDelete } from './endpoints/taskDelete'
 import { TaskFetch } from './endpoints/taskFetch'
 import { TaskList } from './endpoints/taskList'
+import { FileCreate, FileFetch, FileShareCodeFetch } from './files'
 
 // Start a Hono app
 const app = new Hono<{
@@ -13,6 +14,7 @@ const app = new Hono<{
 
 // DB service
 app.use('/api/*', dbMiddleware)
+app.use('/files/*', dbMiddleware)
 
 // Setup OpenAPI registry
 const openapi = fromHono(app, {
@@ -24,6 +26,26 @@ openapi.get('/api/tasks', TaskList)
 openapi.post('/api/tasks', TaskCreate)
 openapi.get('/api/tasks/:taskSlug', TaskFetch)
 openapi.delete('/api/tasks/:taskSlug', TaskDelete)
+
+openapi.put('/files', FileCreate)
+openapi.get('/files/:objectId', FileFetch)
+openapi.get('/files/share/:code', FileShareCodeFetch)
+
+app.all(
+  '/api/*',
+  async () =>
+    new Response('Method Not Allowed', {
+      status: 405,
+    }),
+)
+
+app.all(
+  '/files/*',
+  async () =>
+    new Response('Method Not Allowed', {
+      status: 405,
+    }),
+)
 
 // Web
 app.get('/*', async (c) => {

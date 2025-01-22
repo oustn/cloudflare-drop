@@ -74,9 +74,9 @@ migrations_dir = "data/migrations"
 
 # Bind a KV Namespace. Use KV as persistent storage for small key-value pairs.
 # Docs: https://developers.cloudflare.com/workers/wrangler/configuration/#kv-namespaces
-# [[kv_namespaces]]
-# binding = "MY_KV_NAMESPACE"
-# id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+[[kv_namespaces]]
+binding = "file_drops"
+id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 
 # Bind an mTLS certificate. Use to present a client certificate when communicating with another service.
 # Docs: https://developers.cloudflare.com/workers/wrangler/configuration/#mtls-certificates
@@ -116,7 +116,9 @@ migrations_dir = "data/migrations"
 [env.staging]
 assets = { directory = "./dist/", binding = "ASSETS", html_handling = "none", not_found_handling = "single-page-application" }
 workers_dev = true
+kv_namespaces = [{ binding = "file_drops", id = "f5d4caf1271543368076af7abf634caf" }]
 
 [env.production]
 route = { pattern = "airdrop.wanq.uk", custom_domain = true }
 assets = { directory = "./dist/", binding = "ASSETS", html_handling = "none", not_found_handling = "single-page-application" }
+kv_namespaces = [{ binding = "file_drops", id = "f5d4caf1271543368076af7abf634caf" }]
