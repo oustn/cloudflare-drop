@@ -8,10 +8,27 @@ interface CodeProps {
   onChange?: (value: string) => void
 }
 
+function isValidateCode(str: string | string[], length = 6) {
+  if (!str) return false
+  if (str.length !== length) return false
+  return (Array.isArray(str) ? str : str.split('')).every((d) =>
+    /^[a-zA-Z\d]$/.test(d),
+  )
+}
+
 export function Code({ length, value, onChange }: CodeProps) {
   const [codes, updateCodes] = useState<Array<string>>(
     value ? value.split('') : new Array(length).fill(''),
   )
+
+  useEffect(() => {
+    const code =
+      new URL(window.location.href).searchParams.get('code')?.toUpperCase() ??
+      ''
+    if (code.length === length && isValidateCode(code, length)) {
+      updateCodes(code.split(''))
+    }
+  }, [])
 
   useEffect(() => {
     if (

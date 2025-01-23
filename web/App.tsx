@@ -17,7 +17,7 @@ import SendIcon from '@mui/icons-material/Send'
 import FileIcon from '@mui/icons-material/Description'
 import Divider from '@mui/material/Divider'
 
-import { Code, Message, useMessage, ShareDialog } from './components'
+import { Code, Message, useMessage, FileDialog } from './components'
 import './app.css'
 import { resolveFileByCode, uploadFile } from './api'
 
@@ -56,7 +56,7 @@ export function App() {
         return
       }
       // 打开弹窗
-      await dialogs.open(ShareDialog, { ...data.data, message })
+      await dialogs.open(FileDialog, { ...data.data, message })
     } catch (e) {
       const data = (e as { message: string }).message || JSON.stringify(e)
       message.error(data)
