@@ -7,6 +7,8 @@ import { TaskFetch } from './endpoints/taskFetch'
 import { TaskList } from './endpoints/taskList'
 import { FileCreate, FileFetch, FileShareCodeFetch } from './files'
 
+import { scheduled } from './scheduled'
+
 // Start a Hono app
 const app = new Hono<{
   Bindings: Env
@@ -51,11 +53,14 @@ app.all(
 app.get('/*', async (c) => {
   if (c.env.ENVIRONMENT === 'dev') {
     const url = new URL(c.req.raw.url)
-    url.port = c.env.VITE_PORT
+    url.port = c.env.SHARE_PORT
     return fetch(new Request(url, c.req.raw))
   }
   return c.env.ASSETS.fetch(c.req.raw)
 })
 
 // Export the Hono app
-export default app
+export default {
+  fetch: app.fetch,
+  scheduled,
+}

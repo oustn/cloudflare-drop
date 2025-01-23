@@ -16,6 +16,8 @@ import CloudUploadIcon from '@mui/icons-material/CloudUpload'
 import SendIcon from '@mui/icons-material/Send'
 import FileIcon from '@mui/icons-material/Description'
 import Divider from '@mui/material/Divider'
+import Backdrop from '@mui/material/Backdrop'
+import CircularProgress from '@mui/material/CircularProgress'
 
 import {
   Code,
@@ -39,10 +41,21 @@ const VisuallyHiddenInput = styled('input')({
   width: 1,
 })
 
+const envMax = Number.parseInt(import.meta.env.SHARE_MAX_SIZE_IN_MB, 10)
+const MAX_SIZE = Number.isNaN(envMax) || envMax <= 0 ? 10 : envMax
+
 export function App() {
   const [tab, setTab] = useState('text')
   const [messageProps, message] = useMessage()
   const dialogs = useDialogs()
+
+  const [backdropOpen, setBackdropOpen] = useState(false)
+  const handleBackdropClose = () => {
+    setBackdropOpen(false)
+  }
+  const handleBackdropOpen = () => {
+    setBackdropOpen(true)
+  }
 
   const handleChangeTab = (_event: unknown, newValue: string) => {
     setTab(newValue)
@@ -63,9 +76,10 @@ export function App() {
   const handleResolveFile = useRef(async (code: string) => {
     if (!code || code.length !== 6) return
     setCode(code)
-
+    handleBackdropOpen()
     try {
       const data = await resolveFileByCode(code)
+      handleBackdropClose()
       if (!data.result || !data.data) {
         message.error(data.message)
         return
@@ -77,6 +91,7 @@ export function App() {
     } catch (e) {
       const data = (e as { message: string }).message || JSON.stringify(e)
       message.error(data)
+      handleBackdropClose()
     }
   })
 
@@ -89,6 +104,11 @@ export function App() {
   const handleFileChange = (e: InputEvent) => {
     const target: HTMLInputElement = e.target as HTMLInputElement
     const file = target?.files?.[0] ?? null
+    if (file && file.size > MAX_SIZE * 1024 * 1024) {
+      message.error(`文件大于 ${MAX_SIZE}M`)
+      ;(e.target as HTMLInputElement).value = ''
+      return
+    }
     setFile(file)
   }
 
@@ -101,8 +121,10 @@ export function App() {
       })
     }
     if (!data) return
+    handleBackdropOpen()
     try {
       const uploaded = await uploadFile(data)
+      handleBackdropClose()
       if (!uploaded.result || !uploaded.data) {
         message.error(uploaded.message)
         return
@@ -113,6 +135,7 @@ export function App() {
     } catch (e) {
       const data = (e as { message: string }).message || JSON.stringify(e)
       message.error(data)
+      handleBackdropClose()
     }
   }
 
@@ -225,6 +248,12 @@ export function App() {
         </Container>
       </Paper>
       <Message {...messageProps} />
+      <Backdrop
+        sx={(theme) => ({ color: '#fff', zIndex: theme.zIndex.drawer + 1 })}
+        open={backdropOpen}
+      >
+        <CircularProgress color="inherit" />
+      </Backdrop>
     </Container>
   )
 }

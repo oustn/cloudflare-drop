@@ -3,7 +3,9 @@
 interface Env {
   file_drops: KVNamespace
   ENVIRONMENT: string
-  VITE_PORT: string
+  SHARE_PORT: string
+  SHARE_MAX_SIZE_IN_MB: string
+  SHARE_DURATION: string
   DB: D1Database
   ASSETS: Fetcher
 }

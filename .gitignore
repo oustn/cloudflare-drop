@@ -167,7 +167,6 @@ dist
 .pnp.\*
 
 # wrangler project
-
 .dev.vars
 
 .wrangler

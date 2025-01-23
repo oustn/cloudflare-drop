@@ -3,9 +3,19 @@ import mine from 'mime'
 import { createId, init } from '@paralleldrive/cuid2'
 import { Endpoint } from '../endpoint'
 import { z } from 'zod'
-import dayjs from 'dayjs'
+import dayjs, { ManipulateType } from 'dayjs'
 
 import { files, InsertFileType } from '../../data/schemas'
+
+const duration = ['day', 'week', 'month', 'year', 'hour', 'minute']
+
+function resolveDuration(str: string): [number, ManipulateType] {
+  const match = new RegExp(`^(\\d+)(${duration.join('|')})$`).exec(str)
+  if (!match) {
+    return [1, 'hour']
+  }
+  return [Number.parseInt(match[1], 10), match[2] as ManipulateType]
+}
 
 async function sha1(data: ArrayBuffer) {
   const digest = await crypto.subtle.digest(
@@ -39,7 +49,7 @@ export class FileCreate extends Endpoint {
     let data: ArrayBuffer | null = null
     let filename: string
     let type: string | null
-    // let size: number = 0
+    let size: number = 0
     const contentType = c.req.header('Content-Type')
     if (
       contentType?.startsWith('multipart/form-data') ||
@@ -50,17 +60,24 @@ export class FileCreate extends Endpoint {
       data = await file.arrayBuffer()
       filename = file.name
       type = file.type ?? mine.getType(filename) ?? 'text/plain'
-      // size = file.size
+      size = file.size
     } else {
       const blob = await c.req.blob()
       data = await blob.arrayBuffer()
       filename = (blob as File)?.name ?? ''
       type = blob.type
-      // size = blob.size
+      size = blob.size
     }
 
     if (!data || data.byteLength === 0) {
-      return this.error('File data missing')
+      return this.error('分享内容为空')
+    }
+
+    const envMax = Number.parseInt(c.env.SHARE_MAX_SIZE_IN_MB, 10)
+    const max = Number.isNaN(envMax) || envMax <= 0 ? 10 : envMax
+
+    if (size > max * 1024 * 1024) {
+      return this.error(`文件大于 ${max}M`)
     }
 
     const kv = this.getKV(c)
@@ -74,7 +91,9 @@ export class FileCreate extends Endpoint {
       length: 6,
     })().toUpperCase()
 
-    const dueDate = dayjs().add(1, 'hour').toDate()
+    const [due, dueType] = resolveDuration(c.env.SHARE_DURATION)
+    console.log(c.env.SHARE_DURATION, due, dueType)
+    const dueDate = dayjs().add(due, dueType).toDate()
 
     const insert: InsertFileType = {
       objectId: key,
