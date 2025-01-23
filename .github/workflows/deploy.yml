@@ -1,0 +1,29 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+  repository_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: Deploy
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+      - name: Deploy
+        uses: cloudflare/wrangler-action@v3
+        env:
+          D1_NAME: ${{ secrets.D1_NAME }}
+          D1_ID: ${{ secrets.D1_ID }}
+          KV_ID: ${{ secrets.KV_ID }}
+          CUSTOM_DOMAIN: ${{ secrets.CUSTOM_DOMAIN }}
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          preCommands: ./prepare.sh
+          packageManager: pnpm
