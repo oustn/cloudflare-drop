@@ -116,12 +116,8 @@ id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 # binding = "MY_INDEX"
 # index_name = "my-index"
 
-[env.staging]
-assets = { directory = "./dist/", binding = "ASSETS", html_handling = "none", not_found_handling = "single-page-application" }
-workers_dev = true
-kv_namespaces = [{ binding = "file_drops", id = "f5d4caf1271543368076af7abf634caf" }]
-
 [env.production]
 route = { pattern = "airdrop.wanq.uk", custom_domain = true }
 assets = { directory = "./dist/", binding = "ASSETS", html_handling = "none", not_found_handling = "single-page-application" }
 kv_namespaces = [{ binding = "file_drops", id = "f5d4caf1271543368076af7abf634caf" }]
+d1_databases = [{ binding = "DB", database_name = "airdrop", database_id = "8cc1e2ff-04db-43d7-b042-8db6f8e3a1e9", migrations_dir = "data/migrations" }]

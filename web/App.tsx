@@ -18,6 +18,7 @@ import FileIcon from '@mui/icons-material/Description'
 import Divider from '@mui/material/Divider'
 import Backdrop from '@mui/material/Backdrop'
 import CircularProgress from '@mui/material/CircularProgress'
+import IconButton from '@mui/material/IconButton'
 
 import {
   Code,
@@ -25,6 +26,7 @@ import {
   useMessage,
   FileDialog,
   ShareDialog,
+  Github,
 } from './components'
 import './app.css'
 import { resolveFileByCode, uploadFile } from './api'
@@ -147,10 +149,16 @@ export function App() {
         p: 2,
       }}
     >
-      <Box sx={{ pt: 2, pb: 2 }}>
+      <Box className="flex justify-between" sx={{ pt: 2, pb: 2 }}>
         <Typography variant="h3" color="primary">
           Cloudflare Drop
         </Typography>
+        <IconButton
+          href="https://github.com/oustn/cloudflare-drop"
+          target="_blank"
+        >
+          <Github />
+        </IconButton>
       </Box>
       <Paper elevation={6}>
         <Container className="flex flex-col" sx={{ p: 2 }}>

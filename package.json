@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "generate": "drizzle-kit generate --config data/drizzle.config.ts",
-    "predeploy": "npm run build:web && npm run generate && wrangler d1 migrations apply airdrop --remote",
-    "deploy": "wrangler deploy --env staging",
+    "predeploy": "npm run build:web && npm run generate && wrangler d1 migrations apply airdrop --remote --env production",
+    "deploy": "wrangler deploy --env production",
     "prestart": "cat .dev.vars > .env.local && npm run generate && yes | wrangler d1 migrations apply airdrop --local",
     "start": "concurrently \"npm run dev:web\" \"npm run dev:app\"",
     "dev:app": "wrangler dev",
@@ -60,6 +60,9 @@
     "typescript-eslint": "^8.21.0",
     "vite": "^6.0.5",
     "wrangler": "^3.100.0"
+  },
+  "repository": {
+    "url": "https://github.com/oustn/cloudflare-drop"
   },
   "volta": {
     "node": "20.18.1",
