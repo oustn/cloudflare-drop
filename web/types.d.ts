@@ -10,6 +10,7 @@ interface FileType {
 interface FileUploadedType {
   hash: string
   code: string
+  due_date: number
 }
 
 interface ApiResponseType<T> {

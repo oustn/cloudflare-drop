@@ -58,9 +58,9 @@ importers:
       preact:
         specifier: ^10.25.3
         version: 10.25.4
-      react-copy-to-clipboard:
-        specifier: ^5.1.0
-        version: 5.1.0(react@19.0.0)
+      qrcode-svg:
+        specifier: ^1.1.0
+        version: 1.1.0
       zod:
         specifier: ^3.24.1
         version: 3.24.1
@@ -80,6 +80,9 @@ importers:
       '@types/node':
         specifier: 20.8.3
         version: 20.8.3
+      '@types/qrcode-svg':
+        specifier: ^1.1.5
+        version: 1.1.5
       '@types/react-copy-to-clipboard':
         specifier: ^5.0.7
         version: 5.0.7
@@ -2108,6 +2111,12 @@ packages:
         integrity: sha512-gNMvNH49DJ7OJYv+KAKn0Xp45p8PLl6zo2YnvDIbTd4J6MER2BmWN49TG7n9LvkyihINxeKW8+3bfS2yDC9dzQ==,
       }
 
+  '@types/qrcode-svg@1.1.5':
+    resolution:
+      {
+        integrity: sha512-GjkD+HB8S1wrIsf3skHDtcYBjzNhTxocMbX+wG166xDkaVOnLiMUla7bLjbwxo6mMvqqWQNP0Dk8nkIeizSmnw==,
+      }
+
   '@types/react-copy-to-clipboard@5.0.7':
     resolution:
       {
@@ -2507,12 +2516,6 @@ packages:
         integrity: sha512-yki5XnKuf750l50uGTllt6kKILY4nQ1eNIQatoXEByZ5dWgnKqbnqmTrBE5B4N7lrMJKQ2ytWMiTO2o0v6Ew/w==,
       }
     engines: { node: '>= 0.6' }
-
-  copy-to-clipboard@3.3.3:
-    resolution:
-      {
-        integrity: sha512-2KV8NhB5JqC3ky0r9PMCAZKbUHSwtEo4CwCs0KXgruG43gX5PMqDEBbVU4OUzw2MuAWUfsuFmWvEKG5QRfSnJA==,
-      }
 
   cosmiconfig@7.1.0:
     resolution:
@@ -3754,16 +3757,15 @@ packages:
       }
     engines: { node: '>=6' }
 
-  queue-microtask@1.2.3:
-    resolution: { integrity: sha1-SSkii7xyTfrEPg77BYyve2z7YkM= }
-
-  react-copy-to-clipboard@5.1.0:
+  qrcode-svg@1.1.0:
     resolution:
       {
-        integrity: sha512-k61RsNgAayIJNoy9yDsYzDe/yAZAzEbEgcz3DZMhF686LEyukcE1hzurxe85JandPUG+yTfGVFzuEw3xt8WP/A==,
+        integrity: sha512-XyQCIXux1zEIA3NPb0AeR8UMYvXZzWEhgdBgBjH9gO7M48H9uoHzviNz8pXw3UzrAcxRRRn9gxHewAVK7bn9qw==,
       }
-    peerDependencies:
-      react: ^15.3.0 || 16 || 17 || 18
+    hasBin: true
+
+  queue-microtask@1.2.3:
+    resolution: { integrity: sha1-SSkii7xyTfrEPg77BYyve2z7YkM= }
 
   react-dom@19.0.0:
     resolution:
@@ -4108,9 +4110,6 @@ packages:
   to-regex-range@5.0.1:
     resolution: { integrity: sha1-FkjESq58jZiKMmAY7XL1tN0DkuQ= }
     engines: { node: '>=8.0' }
-
-  toggle-selection@1.0.6:
-    resolution: { integrity: sha1-bkWxJj8gF/oKzH2J14sVuL932jI= }
 
   tree-kill@1.2.2:
     resolution: { integrity: sha1-TKCakJLIi3OnzcXooBtQeweQoMw= }
@@ -5461,6 +5460,8 @@ snapshots:
 
   '@types/prop-types@15.7.14': {}
 
+  '@types/qrcode-svg@1.1.5': {}
+
   '@types/react-copy-to-clipboard@5.0.7':
     dependencies:
       '@types/react': 19.0.4
@@ -5758,10 +5759,6 @@ snapshots:
   convert-source-map@2.0.0: {}
 
   cookie@0.7.2: {}
-
-  copy-to-clipboard@3.3.3:
-    dependencies:
-      toggle-selection: 1.0.6
 
   cosmiconfig@7.1.0:
     dependencies:
@@ -6589,13 +6586,9 @@ snapshots:
 
   punycode@2.3.1: {}
 
-  queue-microtask@1.2.3: {}
+  qrcode-svg@1.1.0: {}
 
-  react-copy-to-clipboard@5.1.0(react@19.0.0):
-    dependencies:
-      copy-to-clipboard: 3.3.3
-      prop-types: 15.8.1
-      react: 19.0.0
+  queue-microtask@1.2.3: {}
 
   react-dom@19.0.0(react@19.0.0):
     dependencies:
@@ -6854,8 +6847,6 @@ snapshots:
   to-regex-range@5.0.1:
     dependencies:
       is-number: 7.0.0
-
-  toggle-selection@1.0.6: {}
 
   tree-kill@1.2.2: {}
 

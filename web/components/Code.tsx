@@ -5,6 +5,7 @@ import Box from '@mui/material/Box'
 interface CodeProps {
   length: number
   value?: string
+  disabled?: boolean
   onChange?: (value: string) => void
 }
 
@@ -16,10 +17,15 @@ function isValidateCode(str: string | string[], length = 6) {
   )
 }
 
-export function Code({ length, value, onChange }: CodeProps) {
+export function Code({ length, value, onChange, disabled }: CodeProps) {
   const [codes, updateCodes] = useState<Array<string>>(
     value ? value.split('') : new Array(length).fill(''),
   )
+
+  useEffect(() => {
+    if (codes.join('') === value) return
+    updateCodes((value ?? '').split(''))
+  }, [value])
 
   useEffect(() => {
     const code =
@@ -61,6 +67,7 @@ export function Code({ length, value, onChange }: CodeProps) {
   }
 
   const handleInput = (e: InputEvent, index: number) => {
+    if (disabled) return
     const target: HTMLInputElement = e.target as HTMLInputElement
     const value = target.value.slice(0, 1).toUpperCase()
     //
@@ -88,6 +95,7 @@ export function Code({ length, value, onChange }: CodeProps) {
   }
 
   const handleKeyUp = (e: KeyboardEvent, index: number) => {
+    if (disabled) return
     if (e.key === 'Backspace') {
       update('', index)
       if (index > 0) {
@@ -106,9 +114,11 @@ export function Code({ length, value, onChange }: CodeProps) {
   }
 
   const handlePaste = (e: ClipboardEvent, index: number) => {
+    if (disabled) return
     e.preventDefault()
-    let paste = e?.clipboardData?.getData('text')
-    paste = paste?.toUpperCase()
+    const string = e?.clipboardData?.getData('text') ?? ''
+    const pasted = /(?:提取码:\s*|^)([a-zA-Z0-9]{6})(?=\s|\b|$)/.exec(string)
+    const paste = pasted?.[1].toUpperCase()
     if (!paste) return
     const values = [...codes]
     for (let i = 0; i < length; i++) {

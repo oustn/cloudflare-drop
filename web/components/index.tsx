@@ -1,3 +1,4 @@
 export * from './Code'
 export * from './Message'
-export * from './FileDialog.tsx'
+export * from './FileDialog'
+export * from './ShareDialog'

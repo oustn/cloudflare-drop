@@ -74,24 +74,27 @@ export class FileCreate extends Endpoint {
       length: 6,
     })().toUpperCase()
 
+    const dueDate = dayjs().add(1, 'hour').toDate()
+
     const insert: InsertFileType = {
       objectId: key,
       filename,
       type,
       hash,
       code: shareCode,
-      due_date: dayjs().add(1, 'hour').toDate(),
+      due_date: dueDate,
     }
 
-    await db.insert(files).values(insert)
+    const [record] = await db.insert(files).values(insert).returning({
+      hash: files.hash,
+      code: files.code,
+      due_date: files.due_date,
+    })
 
     return {
       message: 'ok',
       result: true,
-      data: {
-        hash,
-        code: shareCode,
-      },
+      data: record,
     }
   }
 }

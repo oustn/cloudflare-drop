@@ -17,7 +17,13 @@ import SendIcon from '@mui/icons-material/Send'
 import FileIcon from '@mui/icons-material/Description'
 import Divider from '@mui/material/Divider'
 
-import { Code, Message, useMessage, FileDialog } from './components'
+import {
+  Code,
+  Message,
+  useMessage,
+  FileDialog,
+  ShareDialog,
+} from './components'
 import './app.css'
 import { resolveFileByCode, uploadFile } from './api'
 
@@ -45,9 +51,18 @@ export function App() {
 
   const [text, setText] = useState('')
   const [file, setFile] = useState<File | null>(null)
+  const [code, setCode] = useState('')
+
+  const reset = useRef(() => {
+    setText('')
+    setFile(null)
+    setCode('')
+    setTab('text')
+  })
 
   const handleResolveFile = useRef(async (code: string) => {
     if (!code || code.length !== 6) return
+    setCode(code)
 
     try {
       const data = await resolveFileByCode(code)
@@ -56,7 +71,9 @@ export function App() {
         return
       }
       // 打开弹窗
-      await dialogs.open(FileDialog, { ...data.data, message })
+      await dialogs
+        .open(FileDialog, { ...data.data, message })
+        .then(reset.current)
     } catch (e) {
       const data = (e as { message: string }).message || JSON.stringify(e)
       message.error(data)
@@ -86,11 +103,13 @@ export function App() {
     if (!data) return
     try {
       const uploaded = await uploadFile(data)
-      if (!uploaded.result) {
+      if (!uploaded.result || !uploaded.data) {
         message.error(uploaded.message)
         return
       }
-      // todo
+      await dialogs
+        .open(ShareDialog, { ...uploaded.data, message })
+        .then(reset.current)
     } catch (e) {
       const data = (e as { message: string }).message || JSON.stringify(e)
       message.error(data)
@@ -101,10 +120,15 @@ export function App() {
     <Container
       className="ml-auto mr-auto"
       sx={{
-        maxWidth: 600,
+        maxWidth: `600px !important`,
         p: 2,
       }}
     >
+      <Box sx={{ pt: 2, pb: 2 }}>
+        <Typography variant="h3" color="primary">
+          Cloudflare Drop
+        </Typography>
+      </Box>
       <Paper elevation={6}>
         <Container className="flex flex-col" sx={{ p: 2 }}>
           <Box
@@ -122,7 +146,11 @@ export function App() {
                 分享码：
               </Typography>
             </InputLabel>
-            <Code length={6} onChange={handleResolveFile.current} />
+            <Code
+              length={6}
+              onChange={handleResolveFile.current}
+              value={code}
+            />
           </Box>
 
           <Divider
