@@ -3,9 +3,10 @@ import { HTTPException } from 'hono/http-exception'
 import { Context } from 'hono'
 
 export const limitMiddleware = createMiddleware(async (c: Context, next) => {
-  if (!c.env.UPLOAD_LIMIT) {
+  if (!c.env.UPLOAD_LIMIT || c.env.ENVIRONMENT === 'dev') {
     return next()
   }
+
   const ipAddress = c.req.header('cf-connecting-ip') || ''
 
   if (!ipAddress) {
