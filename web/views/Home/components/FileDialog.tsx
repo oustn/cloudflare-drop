@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'preact/hooks'
+import { useEffect, useState, useRef } from 'preact/hooks'
 import { AxiosProgressEvent } from 'axios'
 import { DialogProps } from '@toolpad/core/useDialogs'
 import Button from '@mui/material/Button'
@@ -11,6 +11,7 @@ import relativeTime from 'dayjs/plugin/relativeTime'
 import zh from 'dayjs/locale/zh-cn'
 import { useDialogs } from '@toolpad/core/useDialogs'
 import Backdrop from '@mui/material/Backdrop'
+import QrCode from 'qrcode-svg'
 
 import { fetchFile, fetchPlainText } from '../../../api'
 import { copyToClipboard } from '../../../common.ts'
@@ -18,6 +19,7 @@ import { BasicDialog } from './BasicDialog.tsx'
 import { PasswordSwitch } from './PasswordSwitch.tsx'
 import LockClose from '@mui/icons-material/Lock'
 import LockOpen from '@mui/icons-material/LockOpen'
+import { useLanguage } from '../../../helpers'
 
 dayjs.extend(relativeTime)
 dayjs.locale(zh)
@@ -35,10 +37,11 @@ export function FileDialog({
     token?: string
   }
 >) {
+  const { t } = useLanguage()
   const dialogs = useDialogs()
   const isText = payload.type === 'plain/string'
   const [text, updateText] = useState(
-    payload.is_encrypted ? '分享已加密，请使用密码解密' : '',
+    payload.is_encrypted ? t('home.fileDialog.encryptedMessage') : '',
   )
   const [password, updatePassword] = useState('')
   const [backdrop] = useState(payload.is_encrypted ?? false)
@@ -47,15 +50,25 @@ export function FileDialog({
   const [progress, updateProgress] = useState(0)
   const [file, setFile] = useState<Blob | null>(null)
 
+  // Generate QR code for the current share URL
+  const currentUrl = `${window.location.protocol}//${window.location.host}?code=${payload.code}`
+  const qr = useRef(
+    new QrCode({
+      content: currentUrl,
+      width: 200,
+      height: 200,
+    }).svg(),
+  )
+
   const showPassword = !password && payload.is_encrypted
 
   const handleCopy = (str: string) => {
     copyToClipboard(str)
       .then(() => {
-        payload.message.success('复制成功')
+        payload.message.success(t('home.fileDialog.copySuccess'))
       })
       .catch(() => {
-        payload.message.success('复制失败')
+        payload.message.success(t('home.fileDialog.copyFailed'))
       })
   }
 
@@ -73,10 +86,10 @@ export function FileDialog({
     if (!payload.is_ephemeral) {
       return onClose()
     }
-    const confirmed = await dialogs.confirm('关闭后无法再次查看，确认关闭？', {
-      okText: '确认',
-      cancelText: '取消',
-      title: '阅后即焚',
+    const confirmed = await dialogs.confirm(t('home.fileDialog.closeConfirm'), {
+      okText: t('common.confirm'),
+      cancelText: t('common.cancel'),
+      title: t('home.settings.ephemeral'),
     })
     if (confirmed) {
       return onClose()
@@ -135,7 +148,11 @@ export function FileDialog({
     <BasicDialog
       open={open}
       onClose={handleClose}
-      title={isText ? '文本分享' : '文件分享'}
+      title={
+        isText
+          ? t('dialogs.fileShare.textShare')
+          : t('dialogs.fileShare.fileShare')
+      }
     >
       <Box>
         {isText && (
@@ -186,8 +203,15 @@ export function FileDialog({
                 },
               })}
             >
-              复制
+              {t('common.copy')}
             </Button>
+
+            {/* QR Code for sharing */}
+            <Box
+              sx={{ mt: 2 }}
+              className="flex justify-center"
+              dangerouslySetInnerHTML={{ __html: qr.current }}
+            />
           </Box>
         )}
         {!isText && (
@@ -201,6 +225,13 @@ export function FileDialog({
                 ? ` (${(payload.size / (1000 * 1000)).toFixed(1)}M)`
                 : ''}
             </Typography>
+
+            {/* QR Code for sharing */}
+            <Box
+              sx={{ mt: 2, mb: 2 }}
+              className="flex justify-center"
+              dangerouslySetInnerHTML={{ __html: qr.current }}
+            />
             {!payload.is_encrypted && (
               <Button
                 target="_blank"
@@ -216,7 +247,7 @@ export function FileDialog({
                   },
                 })}
               >
-                下载
+                {t('common.download')}
               </Button>
             )}
             {payload.is_encrypted && (
@@ -228,7 +259,9 @@ export function FileDialog({
                 {(openPassword) => (
                   <Button
                     loading={downloading}
-                    loadingIndicator={`下载中(${((progress / payload.size) * 100).toFixed(1)}%)...`}
+                    loadingIndicator={t('home.fileDialog.downloading', {
+                      progress: ((progress / payload.size) * 100).toFixed(1),
+                    })}
                     startIcon={!password ? <LockClose /> : <LockOpen />}
                     variant="contained"
                     color={!password ? 'warning' : 'primary'}
@@ -249,7 +282,7 @@ export function FileDialog({
                       handlePasswordDownload(password)
                     }}
                   >
-                    下载
+                    {t('common.download')}
                   </Button>
                 )}
               </PasswordSwitch>
@@ -260,9 +293,9 @@ export function FileDialog({
           {!payload.is_encrypted && (
             <>
               <Typography variant="body2" color="textDisabled">
-                原始分享 SHA256 Hash 值{' '}
+                {t('home.fileDialog.originalShareHash')}{' '}
                 <a target="_blank" href="https://www.lzltool.com/data-hash">
-                  (校验工具)
+                  ({t('dialogs.fileShare.verificationTool')})
                 </a>
                 {'：'}
               </Typography>

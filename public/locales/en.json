@@ -1,0 +1,191 @@
+{
+  "common": {
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "close": "Close",
+    "delete": "Delete",
+    "download": "Download",
+    "upload": "Upload",
+    "share": "Share",
+    "preview": "Preview",
+    "copy": "Copy",
+    "copied": "Copied",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "warning": "Warning",
+    "info": "Info"
+  },
+  "header": {
+    "title": "Cloudflare Drop",
+    "subtitle": "Secure, Fast, Simple File Sharing Platform"
+  },
+  "home": {
+    "downloadSection": {
+      "title": "Share Code",
+      "placeholder": "Enter 6-digit share code"
+    },
+    "uploadSection": {
+      "textTab": "Text Sharing",
+      "fileTab": "File Sharing",
+      "textPlaceholder": "Enter text content to share here...",
+      "fileUpload": "Select File to Upload",
+      "fileReselect": "Reselect",
+      "fileSelectLabel": "Select File",
+      "maxSizeLabel": "Maximum {size}MB supported",
+      "shareButton": "Share Now"
+    },
+    "settings": {
+      "duration": "Expiration Configuration",
+      "ephemeral": "Burn After Reading",
+      "password": "Access Password",
+      "history": "History"
+    },
+    "history": {
+      "title": "History",
+      "sharedTab": "Shared",
+      "receivedTab": "Received",
+      "empty": "No records",
+      "shareCodeLabel": "Share code {code}, click to view"
+    },
+    "password": {
+      "title": "Share Password",
+      "placeholder": "Enter share password",
+      "helpText": "End-to-end encryption using AES-GCM. Server does not store passwords. Data cannot be recovered if password is lost.",
+      "clearPassword": "Clear Password"
+    },
+    "fileDialog": {
+      "encryptedMessage": "Share is encrypted, please use password to decrypt",
+      "copySuccess": "Copy successful",
+      "copyFailed": "Copy failed",
+      "closeConfirm": "Cannot view again after closing, confirm close?",
+      "downloading": "Downloading ({progress}%)...",
+      "originalShareHash": "Original share SHA256 Hash value"
+    },
+    "durations": {
+      "5m": "5 minutes",
+      "1h": "1 hour",
+      "1d": "1 day",
+      "7d": "7 days",
+      "30d": "30 days",
+      "permanent": "Permanent"
+    },
+    "timeUnits": {
+      "default": "Default",
+      "minute": "Minutes",
+      "hour": "Hours", 
+      "day": "Days",
+      "week": "Weeks",
+      "month": "Months",
+      "year": "Years",
+      "permanent": "Permanent"
+    }
+  },
+  "admin": {
+    "title": "Admin Panel",
+    "login": {
+      "title": "Admin Login",
+      "subtitle": "Enter your admin token to access the admin panel",
+      "tokenPlaceholder": "Enter admin token",
+      "tokenRequired": "Admin token is required",
+      "invalidToken": "Invalid admin token",
+      "connectionError": "Connection error. Please try again.",
+      "signIn": "Sign In",
+      "signingIn": "Signing In..."
+    },
+    "logout": {
+      "title": "Logout"
+    },
+    "confirmDelete": "Files cannot be recovered after deletion. Are you sure you want to delete?",
+    "table": {
+      "filename": "Filename",
+      "shareCode": "Share Code",
+      "size": "Size",
+      "sizeTooltip": "Using binary units: 1 MiB = 1024 × 1024 bytes, slightly different from macOS display",
+      "dueDate": "Expires At",
+      "encrypted": "Encrypted",
+      "burnAfterReading": "Burn After Reading",
+      "createdAt": "Created At",
+      "actions": "Actions"
+    },
+    "actions": {
+      "download": "Download File",
+      "preview": "Preview Text",
+      "edit": "Edit File",
+      "delete": "Delete File",
+      "deleteSelected": "Delete Selected",
+      "selected": "Selected {count}"
+    },
+    "edit": {
+      "title": "Edit File",
+      "expiryDate": "Expiry Date",
+      "permanent": "Never expires",
+      "customDate": "Custom expiry date",
+      "selectDate": "Select date and time",
+      "burnAfterReading": "Burn After Reading",
+      "burnAfterReadingHelp": "Delete file after first download",
+      "save": "Save Changes",
+      "cancel": "Cancel",
+      "saving": "Saving...",
+      "success": "File updated successfully",
+      "error": "Failed to update file"
+    },
+    "status": {
+      "permanent": "Permanent",
+      "encrypted": "Encrypted",
+      "text": "[Text]"
+    },
+    "pagination": {
+      "rowsPerPage": "Rows per page",
+      "displayedRows": "{from} - {to} of {count}"
+    },
+    "preview": {
+      "title": "Text Preview"
+    }
+  },
+  "messages": {
+    "fileTooLarge": "File larger than {size}M",
+    "uploadSuccess": "Upload successful",
+    "uploadFailed": "Upload failed",
+    "copySuccess": "Share link copied to clipboard",
+    "copyFailed": "Copy failed",
+    "invalidCode": "Invalid share code",
+    "fileNotFound": "File not found",
+    "downloadFailed": "Download failed"
+  },
+  "dialogs": {
+    "shareSuccess": {
+      "title": "Share Successful",
+      "shareCode": "Share Code",
+      "shareLink": "Share Link",
+      "qrCode": "QR Code",
+      "copyLink": "Copy Link",
+      "downloadQR": "Download QR Code"
+    },
+    "filePreview": {
+      "title": "File Preview",
+      "download": "Download File",
+      "share": "Share File"
+    },
+    "fileShare": {
+      "textShare": "Text Sharing",
+      "fileShare": "File Sharing",
+      "originalShare": "Original Share SHA256 Hash Value",
+      "verificationTool": "Verification Tool",
+      "expectedExpiry": "Expected to expire",
+      "permanent": "Permanent",
+      "linkLabel": "Link",
+      "extractCode": "Extract Code",
+      "sha256Hash": "SHA256 Hash Value"
+    }
+  },
+  "pwa": {
+    "install": "Install App",
+    "updateAvailable": "New version available",
+    "updateNow": "Update Now",
+    "offline": "You are offline",
+    "installPrompt": "Install Cloudflare Drop for quick access!",
+    "howToInstall": "How to Install",
+    "iosInstallInstructions": "1. Tap the Share button in Safari\n2. Scroll down and tap \"Add to Home Screen\"\n3. Tap \"Add\" to install the app"
+  }
+}

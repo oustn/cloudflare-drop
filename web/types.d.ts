@@ -3,12 +3,21 @@ interface FileType {
   code: string
   filename: string
   hash: string
-  due_date: number
+  due_date: number | null
   type: string
   size: number
   is_ephemeral?: boolean
   is_encrypted?: boolean
   created_at: number
+}
+
+interface BeforeInstallPromptEvent extends Event {
+  readonly platforms: string[]
+  readonly userChoice: Promise<{
+    outcome: 'accepted' | 'dismissed'
+    platform: string
+  }>
+  prompt(): Promise<void>
 }
 
 interface FileUploadedType {

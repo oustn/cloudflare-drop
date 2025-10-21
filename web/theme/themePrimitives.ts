@@ -29,16 +29,16 @@ declare module '@mui/material/styles/createPalette' {
 const defaultTheme = createTheme()
 
 export const brand = {
-  50: 'hsl(210, 100%, 95%)',
-  100: 'hsl(210, 100%, 92%)',
-  200: 'hsl(210, 100%, 80%)',
-  300: 'hsl(210, 100%, 65%)',
-  400: 'hsl(210, 98%, 48%)',
-  500: 'hsl(210, 98%, 42%)',
-  600: 'hsl(210, 98%, 55%)',
-  700: 'hsl(210, 100%, 35%)',
-  800: 'hsl(210, 100%, 16%)',
-  900: 'hsl(210, 100%, 21%)',
+  50: 'hsl(220, 41%, 95%)', // very light
+  100: 'hsl(220, 41%, 90%)', // light
+  200: 'hsl(220, 41%, 80%)', // lighter
+  300: 'hsl(220, 41%, 65%)', // medium-light
+  400: 'hsl(220, 41%, 48%)', // medium
+  500: 'hsl(220, 41%, 35%)', // medium-dark
+  600: 'hsl(220, 41%, 25%)', // darker
+  700: 'hsl(220, 41%, 20%)', // very dark
+  800: 'hsl(220, 41%, 16%)', // your main color rgb(24, 33, 57)
+  900: 'hsl(220, 41%, 12%)', // darkest
 }
 
 export const gray = {
@@ -95,10 +95,10 @@ export const gray = {
 
 // core design
 const primary = {
-  darker: '#3568D4',
-  main: '#3E7BFA',
-  lighter: '#6698FA',
-  subtle: '#CCDDFF',
+  darker: 'rgb(18, 25, 43)', // darker version of rgb(24, 33, 57)
+  main: 'rgb(24, 33, 57)', // your requested color
+  lighter: 'rgb(36, 50, 86)', // lighter version
+  subtle: 'rgb(224, 229, 242)', // very light version for subtle elements
 }
 
 const dark = {

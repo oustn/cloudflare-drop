@@ -22,3 +22,160 @@
   src: url('/DingTalk_Sans.ttf') format('truetype');
   font-display: swap;
 }
+
+/* iOS PWA Specific Styles */
+.ios-pwa {
+  /* Remove iOS Safari UI bars */
+  -webkit-overflow-scrolling: touch;
+}
+
+.ios-pwa body {
+  /* Prevent iOS Safari bounce effect */
+  position: fixed;
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+}
+
+.ios-pwa #app {
+  /* Ensure full height on iOS PWA */
+  height: 100vh;
+  height: -webkit-fill-available;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* iOS Safe Area Support */
+@supports (padding: max(0px)) {
+  .ios-pwa {
+    padding-left: max(12px, env(safe-area-inset-left));
+    padding-right: max(12px, env(safe-area-inset-right));
+    padding-top: max(0px, env(safe-area-inset-top));
+    padding-bottom: max(0px, env(safe-area-inset-bottom));
+  }
+}
+
+/* iOS PWA Status Bar */
+@media (display-mode: standalone) {
+  /* PWA mode detected */
+  body {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Hide scrollbars in PWA mode */
+  ::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* iOS Specific Input Fixes */
+input,
+textarea,
+select {
+  /* Prevent iOS zoom on focus */
+  font-size: 16px !important;
+}
+
+@media screen and (max-width: 768px) {
+  input,
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
+
+/* iOS PWA Install Banner (Custom) */
+@keyframes slideUpFade {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.ios-install-banner {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, rgb(24, 33, 57), rgb(18, 25, 43));
+  color: white;
+  padding: 16px 20px;
+  border-radius: 12px;
+  font-size: 14px;
+  z-index: 10000;
+  max-width: 90vw;
+  min-width: 300px;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(24, 33, 57, 0.3);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  animation: slideUpFade 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.ios-install-banner .emoji {
+  animation: pulse 2s infinite;
+  display: inline-block;
+}
+
+.ios-install-banner.hidden {
+  display: none;
+}
+
+.ios-install-banner button {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.ios-install-banner button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.ios-install-banner button:active {
+  transform: translateY(0);
+}
+
+/* Touch feedback for iOS */
+button,
+[role='button'],
+.clickable {
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Material-UI Component Overrides */
+.css-1efw8qf {
+  color: rgb(23, 23, 23) !important;
+  background-image: none !important;
+  transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  position: relative !important;
+  overflow-y: auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  margin: 0px !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  height: 90% !important;
+  max-height: none !important;
+  border-radius: 28px !important;
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  backdrop-filter: blur(40px) saturate(200%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  box-shadow: rgba(0, 0, 0, 0.1) 0px 25px 50px !important;
+}

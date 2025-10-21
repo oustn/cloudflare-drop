@@ -6,6 +6,8 @@ import { useState } from 'preact/hooks'
 import Box from '@mui/material/Box'
 import TextField from '@mui/material/TextField'
 import { ManipulateType } from 'dayjs'
+import { useLanguage } from '../../../helpers'
+import { alpha } from '@mui/material/styles'
 
 interface DurationProps {
   value?: string
@@ -16,42 +18,6 @@ const DEFAULT_VALUE = 'default'
 const MAX_VALUE = '999year'
 
 const duration = ['day', 'week', 'month', 'year', 'hour', 'minute']
-// `minute`, `hour`, `day`, `week`, `month`, `year`
-const CONFIG = [
-  {
-    label: '默认',
-    value: DEFAULT_VALUE,
-  },
-  {
-    label: '分钟',
-    value: 'minute',
-  },
-  {
-    label: '小时',
-    value: 'hour',
-  },
-  {
-    label: '天',
-    value: 'day',
-  },
-  {
-    label: '周',
-    value: 'week',
-  },
-  {
-    label: '月',
-    value: 'month',
-  },
-  {
-    label: '年',
-    value: 'year',
-  },
-  {
-    label: '永久有效',
-    value: '999year',
-  },
-]
-
 function resolveDuration(str: string): [number, ManipulateType] {
   const match = new RegExp(`^(\\d+)(${duration.join('|')})$`).exec(str)
   if (!match) {
@@ -62,6 +28,43 @@ function resolveDuration(str: string): [number, ManipulateType] {
 
 export function Duration(props: DurationProps) {
   const { value = '', onChange } = props
+  const { t } = useLanguage()
+
+  // Generate CONFIG with translations
+  const CONFIG = [
+    {
+      label: t('home.timeUnits.default'),
+      value: DEFAULT_VALUE,
+    },
+    {
+      label: t('home.timeUnits.minute'),
+      value: 'minute',
+    },
+    {
+      label: t('home.timeUnits.hour'),
+      value: 'hour',
+    },
+    {
+      label: t('home.timeUnits.day'),
+      value: 'day',
+    },
+    {
+      label: t('home.timeUnits.week'),
+      value: 'week',
+    },
+    {
+      label: t('home.timeUnits.month'),
+      value: 'month',
+    },
+    {
+      label: t('home.timeUnits.year'),
+      value: 'year',
+    },
+    {
+      label: t('home.timeUnits.permanent'),
+      value: '999year',
+    },
+  ]
 
   const [count, updateCount] = useState(0)
   const [type, updateType] = useState(DEFAULT_VALUE)
@@ -141,6 +144,7 @@ export function Duration(props: DurationProps) {
         '& .MuiTypography-root': {
           flexShrink: 0,
           mr: 1,
+          color: alpha('#ffffff', 0.8),
         },
       }}
       control={
@@ -148,7 +152,23 @@ export function Duration(props: DurationProps) {
           {type !== DEFAULT_VALUE && type !== MAX_VALUE && (
             <TextField
               value={count}
-              sx={{ mr: 1 }}
+              sx={{
+                mr: 1,
+                '& .MuiOutlinedInput-root': {
+                  background: alpha('#183951', 0.2),
+                  backdropFilter: 'blur(10px)',
+                  border: `1px solid ${alpha('#ffffff', 0.2)}`,
+                  '& fieldset': {
+                    border: 'none',
+                  },
+                  '&.Mui-focused': {
+                    background: alpha('#183951', 0.4),
+                  },
+                },
+                '& .MuiInputBase-input': {
+                  color: alpha('#ffffff', 0.9),
+                },
+              }}
               onInput={handleInput}
               onBeforeInput={handleBeforeInput}
             />
@@ -159,6 +179,41 @@ export function Duration(props: DurationProps) {
             defaultValue={DEFAULT_VALUE}
             value={type}
             onChange={handleChange}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                background: alpha('#183951', 0.2),
+                backdropFilter: 'blur(10px)',
+                border: `1px solid ${alpha('#ffffff', 0.2)}`,
+                '& fieldset': {
+                  border: 'none',
+                },
+                '&.Mui-focused': {
+                  background: alpha('#183951', 0.4),
+                },
+              },
+              '& .MuiSelect-select': {
+                color: alpha('#ffffff', 0.9),
+              },
+              '& .MuiSelect-icon': {
+                color: alpha('#ffffff', 0.7),
+              },
+            }}
+            MenuProps={{
+              PaperProps: {
+                sx: {
+                  background: alpha('#183951', 0.9),
+                  backdropFilter: 'blur(20px)',
+                  border: `1px solid ${alpha('#ffffff', 0.2)}`,
+                  borderRadius: 2,
+                  '& .MuiMenuItem-root': {
+                    color: alpha('#ffffff', 0.9),
+                    '&.Mui-selected': {
+                      background: alpha('#183951', 0.5),
+                    },
+                  },
+                },
+              },
+            }}
           >
             {CONFIG.map((d) => (
               <MenuItem key={d.label} value={d.value}>
@@ -168,7 +223,7 @@ export function Duration(props: DurationProps) {
           </Select>
         </Box>
       }
-      label="过期配置"
+      label={t('home.settings.duration')}
       labelPlacement="start"
     />
   )

@@ -40,26 +40,12 @@
     {
       "idx": 5,
       "version": "6",
-      "when": 1744447198083,
-      "tag": "0005_sloppy_corsair",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "6",
-      "when": 1744447308301,
-      "tag": "0006_brief_prodigy",
-      "breakpoints": true
-    },
-    {
-      "idx": 7,
-      "version": "6",
       "when": 1744447358274,
       "tag": "0007_rich_sandman",
       "breakpoints": true
     },
     {
-      "idx": 8,
+      "idx": 6,
       "version": "6",
       "when": 1744447482410,
       "tag": "0008_magical_shockwave",

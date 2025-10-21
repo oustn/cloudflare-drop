@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'preact/hooks'
 import TextField from '@mui/material/TextField'
 import Box from '@mui/material/Box'
+import { alpha } from '@mui/material/styles'
 
 interface CodeProps {
   length: number
@@ -139,11 +140,33 @@ export function Code({ length, value, onChange, disabled }: CodeProps) {
             sx={{
               '.MuiInputBase-root': {
                 fontSize: 20,
+                background: alpha('#183951', 0.2),
+                backdropFilter: 'blur(10px)',
+                border: `1px solid ${alpha('#ffffff', 0.2)}`,
+                borderRadius: 1, // More square for better iOS number display
+                '@media (max-width: 768px)': {
+                  borderRadius: 0.5, // Even more square on mobile
+                },
+                '@media (max-width: 480px)': {
+                  borderRadius: 0, // Completely square on iOS for better compatibility
+                  fontSize: 18,
+                },
+                '& fieldset': {
+                  border: 'none',
+                },
+                '&.Mui-focused': {
+                  background: alpha('#183951', 0.4),
+                  border: `1px solid ${alpha('#ffffff', 0.5)}`,
+                  boxShadow: `0 0 0 2px ${alpha('#ffffff', 0.1)}`,
+                },
               },
 
               '.MuiInputBase-root input': {
                 paddingBlock: '0.4em',
                 textAlign: 'center',
+                color: alpha('#ffffff', 0.9),
+                fontWeight: 600,
+                letterSpacing: '0.1em',
               },
             }}
             slotProps={{

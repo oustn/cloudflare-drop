@@ -1,5 +1,6 @@
 # Logs
 .idea/
+logs/
 
 logs
 _.log
@@ -173,3 +174,6 @@ wrangler.local.toml
 wrangler.toml
 
 .wrangler
+
+# Pull request documentation
+PULL_REQUEST_DESCRIPTION.md

@@ -1,0 +1,191 @@
+{
+  "common": {
+    "confirm": "確認",
+    "cancel": "取消",
+    "close": "關閉",
+    "delete": "刪除",
+    "download": "下載",
+    "upload": "上傳",
+    "share": "分享",
+    "preview": "預覽",
+    "copy": "複製",
+    "copied": "已複製",
+    "loading": "載入中...",
+    "error": "錯誤",
+    "success": "成功",
+    "warning": "警告",
+    "info": "資訊"
+  },
+  "header": {
+    "title": "Cloudflare Drop",
+    "subtitle": "安全、快速、簡單的檔案分享平台"
+  },
+  "home": {
+    "downloadSection": {
+      "title": "分享碼",
+      "placeholder": "請輸入6位分享碼"
+    },
+    "uploadSection": {
+      "textTab": "文字分享",
+      "fileTab": "檔案分享",
+      "textPlaceholder": "在此輸入要分享的文字內容...",
+      "fileUpload": "選擇檔案上傳",
+      "fileReselect": "重新選擇",
+      "fileSelectLabel": "選擇檔案",
+      "maxSizeLabel": "支援最大 {size}MB",
+      "shareButton": "立即分享"
+    },
+    "settings": {
+      "duration": "過期配置",
+      "ephemeral": "閱後即焚",
+      "password": "存取密碼",
+      "history": "歷史記錄"
+    },
+    "history": {
+      "title": "歷史記錄",
+      "sharedTab": "已分享",
+      "receivedTab": "已接收",
+      "empty": "記錄為空",
+      "shareCodeLabel": "分享碼 {code}，點擊查看"
+    },
+    "password": {
+      "title": "分享密碼",
+      "placeholder": "請輸入分享密碼",
+      "helpText": "採用 AES-GCM 端對端加密，伺服器不保存密碼，密碼遺失資料將無法恢復",
+      "clearPassword": "清空密碼"
+    },
+    "fileDialog": {
+      "encryptedMessage": "分享已加密，請使用密碼解密",
+      "copySuccess": "複製成功",
+      "copyFailed": "複製失敗",
+      "closeConfirm": "關閉後無法再次查看，確認關閉？",
+      "downloading": "下載中({progress}%)...",
+      "originalShareHash": "原始分享 SHA256 Hash 值"
+    },
+    "durations": {
+      "5m": "5分鐘",
+      "1h": "1小時",
+      "1d": "1天",
+      "7d": "7天",
+      "30d": "30天",
+      "permanent": "永久"
+    },
+    "timeUnits": {
+      "default": "預設",
+      "minute": "分鐘",
+      "hour": "小時",
+      "day": "天",
+      "week": "週",
+      "month": "月",
+      "year": "年",
+      "permanent": "永久有效"
+    }
+  },
+  "admin": {
+    "title": "管理面板",
+    "login": {
+      "title": "管理員登入",
+      "subtitle": "請輸入管理員令牌以存取管理面板",
+      "tokenPlaceholder": "輸入管理員令牌",
+      "tokenRequired": "管理員令牌是必需的",
+      "invalidToken": "無效的管理員令牌",
+      "connectionError": "連線錯誤，請重試。",
+      "signIn": "登入",
+      "signingIn": "登入中..."
+    },
+    "logout": {
+      "title": "登出"
+    },
+    "confirmDelete": "刪除後無法復原，請確認是否刪除？",
+    "table": {
+      "filename": "檔案名稱",
+      "shareCode": "分享碼",
+      "size": "大小",
+      "sizeTooltip": "使用二進位單位：1 MiB = 1024 × 1024 位元組，與 macOS 顯示略有不同",
+      "dueDate": "有效期至",
+      "encrypted": "是否加密",
+      "burnAfterReading": "閱後即焚",
+      "createdAt": "建立時間",
+      "actions": "操作"
+    },
+    "actions": {
+      "download": "下載檔案",
+      "preview": "預覽文字",
+      "edit": "編輯檔案",
+      "delete": "刪除檔案",
+      "deleteSelected": "刪除所選",
+      "selected": "已選取 {count}"
+    },
+    "edit": {
+      "title": "編輯檔案",
+      "expiryDate": "過期時間",
+      "permanent": "永不過期",
+      "customDate": "自訂過期時間",
+      "selectDate": "選擇日期和時間",
+      "burnAfterReading": "閱後即焚",
+      "burnAfterReadingHelp": "首次下載後刪除檔案",
+      "save": "儲存變更",
+      "cancel": "取消",
+      "saving": "儲存中...",
+      "success": "檔案更新成功",
+      "error": "檔案更新失敗"
+    },
+    "status": {
+      "permanent": "永久",
+      "encrypted": "已加密",
+      "text": "[文字]"
+    },
+    "pagination": {
+      "rowsPerPage": "分頁大小",
+      "displayedRows": "{from} - {to} 共 {count} 條"
+    },
+    "preview": {
+      "title": "文字預覽"
+    }
+  },
+  "messages": {
+    "fileTooLarge": "檔案大於 {size}M",
+    "uploadSuccess": "上傳成功",
+    "uploadFailed": "上傳失敗",
+    "copySuccess": "分享連結已複製到剪貼簿",
+    "copyFailed": "複製失敗",
+    "invalidCode": "無效的分享碼",
+    "fileNotFound": "檔案未找到",
+    "downloadFailed": "下載失敗"
+  },
+  "dialogs": {
+    "shareSuccess": {
+      "title": "分享成功",
+      "shareCode": "分享碼",
+      "shareLink": "分享連結",
+      "qrCode": "二維碼",
+      "copyLink": "複製連結",
+      "downloadQR": "下載二維碼"
+    },
+    "filePreview": {
+      "title": "檔案預覽",
+      "download": "下載檔案",
+      "share": "分享檔案"
+    },
+    "fileShare": {
+      "textShare": "文字分享",
+      "fileShare": "檔案分享",
+      "originalShare": "原始分享 SHA256 Hash 值",
+      "verificationTool": "校驗工具",
+      "expectedExpiry": "預計過期於",
+      "permanent": "永久有效",
+      "linkLabel": "連結",
+      "extractCode": "提取碼",
+      "sha256Hash": "SHA256 Hash 值"
+    }
+  },
+  "pwa": {
+    "install": "安裝應用程式",
+    "updateAvailable": "有新版本可用",
+    "updateNow": "立即更新",
+    "offline": "您目前離線",
+    "installPrompt": "安裝 Cloudflare Drop 以便快速存取！",
+    "howToInstall": "如何安裝",
+    "iosInstallInstructions": "1. 在 Safari 中點擊分享按鈕\n2. 向下滾動並點擊「加入主畫面」\n3. 點擊「加入」以安裝應用程式"
+  }
+}

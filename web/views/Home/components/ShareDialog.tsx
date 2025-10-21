@@ -12,6 +12,7 @@ import { BasicDialog } from './BasicDialog.tsx'
 import Typography from '@mui/material/Typography'
 import TextField from '@mui/material/TextField'
 import Button from '@mui/material/Button'
+import { useLanguage } from '../../../helpers'
 
 import { Code } from './index.tsx'
 
@@ -30,8 +31,9 @@ export function ShareDialog({
     }
   }
 >) {
+  const { t } = useLanguage()
   const url = `${window.location.protocol}//${window.location.host}?code=${payload.code}`
-  const desc = `链接: ${url} 提取码: ${payload.code} ${payload.is_encrypted ? '' : ` SHA256 Hash 值: ${payload.hash}`} `
+  const desc = `${t('dialogs.fileShare.linkLabel')}: ${url} ${t('dialogs.fileShare.extractCode')}: ${payload.code} ${payload.is_encrypted ? '' : ` ${t('dialogs.fileShare.sha256Hash')}: ${payload.hash}`} `
   const qr = useRef(
     new QrCode({
       content: url,
@@ -41,15 +43,15 @@ export function ShareDialog({
   const handleCopy = (str: string) => {
     copyToClipboard(str)
       .then(() => {
-        payload.message.success('复制成功')
+        payload.message.success(t('messages.copySuccess'))
       })
       .catch(() => {
-        payload.message.success('复制失败')
+        payload.message.success(t('messages.copyFailed'))
       })
   }
 
   return (
-    <BasicDialog open={open} onClose={onClose} title="分享">
+    <BasicDialog open={open} onClose={onClose} title={t('dialogs.shareSuccess.title')}>
       <Box>
         <Box
           className="relative"
@@ -102,15 +104,15 @@ export function ShareDialog({
               },
             })}
           >
-            复制
+            {t('dialogs.shareSuccess.copyLink')}
           </Button>
         </Box>
 
         <Box sx={{ mt: 2 }}>
           <Typography variant="body2" color="textDisabled">
-            原始分享 SHA256 Hash 值{' '}
-            <a target="_blank" href="https://www.lzltool.com/data-hash">
-              (校验工具)
+            {t('dialogs.fileShare.originalShare')}{' '}
+            <a target="_blank" href="https://emn178.github.io/online-tools/sha256.html">
+              ({t('dialogs.fileShare.verificationTool')})
             </a>
             {'：'}
           </Typography>
@@ -126,7 +128,7 @@ export function ShareDialog({
           </Typography>
           {}
           <Typography className="mt-1" variant="body2" color="textDisabled">
-            {payload.due_date ? '预计过期于：' : '永久有效'}
+            {payload.due_date ? `${t('dialogs.fileShare.expectedExpiry')}：` : t('dialogs.fileShare.permanent')}
           </Typography>
           {payload.due_date && (
             <Typography className="mt-1" variant="body2">

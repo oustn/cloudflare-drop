@@ -14,7 +14,9 @@
     "build:web": "tsc -b ./tsconfig.web.json && vite build",
     "cf-typegen": "wrangler types",
     "lint": "prettier . --write && eslint . --fix",
-    "prepare": "husky"
+    "prepare": "husky",
+    "auto-push": "powershell -ExecutionPolicy Bypass -File ./auto-push.ps1",
+    "auto-push:bash": "./auto-push.sh"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

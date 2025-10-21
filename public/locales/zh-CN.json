@@ -1,0 +1,182 @@
+{
+  "common": {
+    "confirm": "确认",
+    "cancel": "取消",
+    "close": "关闭",
+    "delete": "删除",
+    "download": "下载",
+    "upload": "上传",
+    "share": "分享",
+    "preview": "预览",
+    "copy": "复制",
+    "copied": "已复制",
+    "loading": "加载中...",
+    "error": "错误",
+    "success": "成功",
+    "warning": "警告",
+    "info": "信息"
+  },
+  "header": {
+    "title": "Cloudflare Drop",
+    "subtitle": "安全、快速、简单的文件分享平台"
+  },
+  "home": {
+    "downloadSection": {
+      "title": "分享码",
+      "placeholder": "请输入6位分享码"
+    },
+    "uploadSection": {
+      "textTab": "文本分享",
+      "fileTab": "文件分享",
+      "textPlaceholder": "在此输入要分享的文本内容...",
+      "fileUpload": "选择文件上传",
+      "fileReselect": "重新选择",
+      "fileSelectLabel": "选择文件",
+      "maxSizeLabel": "支持最大 {size}MB",
+      "shareButton": "立即分享"
+    },
+    "settings": {
+      "duration": "有效期",
+      "ephemeral": "阅后即焚",
+      "password": "访问密码",
+      "history": "历史记录"
+    },
+    "history": {
+      "title": "历史记录",
+      "sharedTab": "已分享",
+      "receivedTab": "已接收",
+      "empty": "记录为空",
+      "shareCodeLabel": "分享码 {code}，点击查看"
+    },
+    "password": {
+      "title": "分享密码",
+      "placeholder": "请输入分享密码",
+      "helpText": "采用 AES-GCM 端对端加密，服务器不保存密码，密码丢失数据将无法恢复",
+      "clearPassword": "清空密码"
+    },
+    "fileDialog": {
+      "encryptedMessage": "分享已加密，请使用密码解密",
+      "copySuccess": "复制成功",
+      "copyFailed": "复制失败",
+      "closeConfirm": "关闭后无法再次查看，确认关闭？",
+      "downloading": "下载中({progress}%)...",
+      "originalShareHash": "原始分享 SHA256 Hash 值"
+    },
+    "durations": {
+      "5m": "5分钟",
+      "1h": "1小时",
+      "1d": "1天",
+      "7d": "7天",
+      "30d": "30天",
+      "permanent": "永久"
+    },
+    "timeUnits": {
+      "default": "默认",
+      "minute": "分钟",
+      "hour": "小时",
+      "day": "天",
+      "week": "周",
+      "month": "月",
+      "year": "年",
+      "permanent": "永久有效"
+    }
+  },
+  "admin": {
+    "title": "管理面板",
+    "login": {
+      "title": "管理员登录",
+      "subtitle": "请输入管理员令牌以访问管理面板",
+      "tokenPlaceholder": "输入管理员令牌",
+      "tokenRequired": "管理员令牌是必需的",
+      "invalidToken": "无效的管理员令牌",
+      "connectionError": "连接错误，请重试。",
+      "signIn": "登录",
+      "signingIn": "登录中..."
+    },
+    "logout": {
+      "title": "退出登录"
+    },
+    "confirmDelete": "删除后无法恢复，请确认是否删除？",
+    "table": {
+      "filename": "文件名",
+      "shareCode": "分享码",
+      "size": "大小",
+      "sizeTooltip": "使用二进制单位：1 MiB = 1024 × 1024 字节，与 macOS 显示略有不同",
+      "dueDate": "有效期至",
+      "encrypted": "是否加密",
+      "burnAfterReading": "阅后即焚",
+      "createdAt": "创建时间",
+      "actions": "操作"
+    },
+    "actions": {
+      "download": "下载文件",
+      "preview": "预览文本",
+      "edit": "编辑文件",
+      "delete": "删除文件",
+      "deleteSelected": "删除选中",
+      "selected": "选中 {count}"
+    },
+    "edit": {
+      "title": "编辑文件",
+      "expiryDate": "过期时间",
+      "permanent": "永不过期",
+      "customDate": "自定义过期时间",
+      "selectDate": "选择日期和时间",
+      "burnAfterReading": "阅后即焚",
+      "burnAfterReadingHelp": "首次下载后删除文件",
+      "save": "保存更改",
+      "cancel": "取消",
+      "saving": "保存中...",
+      "success": "文件更新成功",
+      "error": "文件更新失败"
+    },
+    "status": {
+      "permanent": "永久",
+      "encrypted": "已加密",
+      "text": "[文本]"
+    },
+    "pagination": {
+      "rowsPerPage": "分页大小",
+      "displayedRows": "{from} - {to} 共 {count} 条"
+    },
+    "preview": {
+      "title": "文本预览"
+    }
+  },
+  "messages": {
+    "fileTooLarge": "文件大于 {size}M",
+    "uploadSuccess": "上传成功",
+    "uploadFailed": "上传失败",
+    "copySuccess": "分享链接已复制到剪贴板",
+    "copyFailed": "复制失败",
+    "invalidCode": "无效的分享码",
+    "fileNotFound": "文件未找到",
+    "downloadFailed": "下载失败"
+  },
+  "dialogs": {
+    "shareSuccess": {
+      "title": "分享成功",
+      "shareCode": "分享码",
+      "shareLink": "分享链接",
+      "qrCode": "二维码",
+      "copyLink": "复制链接",
+      "downloadQR": "下载二维码"
+    },
+    "filePreview": {
+      "title": "文件预览",
+      "download": "下载文件",
+      "share": "分享文件"
+    },
+    "fileShare": {
+      "textShare": "文本分享",
+      "fileShare": "文件分享",
+      "originalShare": "原始分享 SHA256 Hash 值",
+      "verificationTool": "校验工具",
+      "expectedExpiry": "预计过期于",
+      "permanent": "永久有效",
+      "linkLabel": "链接",
+      "extractCode": "提取码",
+      "sha256Hash": "SHA256 Hash 值"
+    }
+  }
+}
