@@ -1,19 +1,16 @@
 import { observable, action, makeObservable } from 'mobx'
 import dayjs from 'dayjs'
-import zhCN from 'dayjs/locale/zh-cn'
 import zhTW from 'dayjs/locale/zh-tw'
 import { Locale, TranslationKeys } from './types'
 import { locales } from './locales'
 
-// dayjs locale 映射
+// dayjs 語系對應
 const dayjsLocaleMap: Record<Locale, string> = {
-  'zh-CN': 'zh-cn',
   'zh-TW': 'zh-tw',
   en: 'en',
 }
 
-// 預先載入所有 locale
-dayjs.locale(zhCN)
+// 預先載入所有語系
 dayjs.locale(zhTW)
 
 type TranslationParams = Record<string, string | number>
@@ -21,7 +18,7 @@ type TranslationParams = Record<string, string | number>
 class I18nStore {
   private static STORAGE_KEY = 'app-locale'
 
-  @observable accessor locale: Locale = 'zh-CN'
+  @observable accessor locale: Locale = 'zh-TW'
 
   constructor() {
     makeObservable(this)
@@ -36,35 +33,34 @@ class I18nStore {
       return
     }
 
-    // 2. 根據瀏覽器語言自動檢測
+    // 2. 根據瀏覽器語言自動偵測
     const browserLang = navigator.language
-    if (browserLang === 'zh-TW' || browserLang === 'zh-HK') {
+    if (browserLang.startsWith('zh')) {
       this.setLocale('zh-TW')
-    } else if (browserLang.startsWith('zh')) {
-      this.setLocale('zh-CN')
     } else {
       this.setLocale('en')
     }
   }
 
   private isValidLocale(locale: string): locale is Locale {
-    return locale === 'zh-CN' || locale === 'zh-TW' || locale === 'en'
+    return locale === 'zh-TW' || locale === 'en'
   }
 
   @action
   setLocale(locale: Locale) {
     this.locale = locale
     localStorage.setItem(I18nStore.STORAGE_KEY, locale)
+    document.documentElement.lang = locale
 
     // 同步 dayjs locale
     dayjs.locale(dayjsLocaleMap[locale])
   }
 
   /**
-   * 獲取翻譯文字
-   * @param namespace 命名空間（如 'common', 'home'）
+   * 取得翻譯文字
+   * @param namespace 命名空間（例如 'common', 'home'）
    * @param key 翻譯鍵
-   * @param params 參數（用於替換 {param} 佔位符）
+   * @param params 參數（用來取代 {param} 預留位置）
    */
   t = <N extends keyof TranslationKeys>(
     namespace: N,
@@ -77,7 +73,7 @@ class I18nStore {
       return text
     }
 
-    // 替換 {param} 佔位符
+    // 取代 {param} 預留位置
     return Object.entries(params).reduce(
       (result, [k, v]) => result.replace(`{${k}}`, String(v)),
       text,

@@ -68,6 +68,9 @@ export const en: TranslationKeys = {
     hashLabel: 'Original SHA256 Hash',
   },
   admin: {
+    shareList: 'Shares',
+    text: 'Text',
+    permanent: 'Permanent',
     filename: 'Filename',
     shareCode: 'Share Code',
     size: 'Size',
@@ -79,6 +82,9 @@ export const en: TranslationKeys = {
     actions: 'Actions',
     deleteSelected: 'Delete Selected',
     selected: '{count} selected',
+    delete: 'Delete',
+    sortedAscending: 'Sorted ascending',
+    sortedDescending: 'Sorted descending',
   },
   errors: {
     versionMismatch: 'Version mismatch',
@@ -93,6 +99,9 @@ export const en: TranslationKeys = {
     codeGenerationFailed: 'Failed to generate share code, please retry',
     invalidToken: 'Invalid token',
     invalidObjectId: 'Invalid object ID',
+    adminDisabled: 'Admin features are disabled',
+    chunkUploadFailed: 'File chunk upload failed',
+    chunkIncomplete: 'File chunks are incomplete',
     unknownError: 'Unknown error',
   },
 }

@@ -21,13 +21,13 @@ export const terminalMiddleware = createMiddleware<{
   }
   const file = await getFile(db, code)
   if (!file) {
-    return c.text('分享码无效', {
+    return c.text('分享碼無效 / Invalid share code', {
       status: 404,
     })
   }
   const day = dayjs(file.due_date)
   if (day.isBefore(dayjs())) {
-    return c.text('分享已过期', {
+    return c.text('分享已過期 / Share has expired', {
       status: 410,
     })
   }

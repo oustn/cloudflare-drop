@@ -2,7 +2,7 @@ import { i18nStore } from '../i18n/store'
 import { TranslationKeys } from '../i18n/types'
 
 /**
- * 將後端返回的錯誤碼（如 INVALID_CODE）轉換為 camelCase（如 invalidCode）
+ * 將後端回傳的錯誤碼（例如 INVALID_CODE）轉換為 camelCase（例如 invalidCode）
  */
 function toCamelCase(str: string): string {
   return str
@@ -17,16 +17,16 @@ function toCamelCase(str: string): string {
 }
 
 /**
- * 將後端返回的錯誤訊息映射到 i18n 翻譯
- * @param errorMessage 後端返回的錯誤訊息（可能是錯誤碼如 INVALID_CODE 或其他訊息）
- * @returns i18n 翻譯後的錯誤訊息
+ * 將後端回傳的錯誤訊息對應至 i18n 翻譯
+ * @param errorMessage 後端回傳的錯誤訊息（可能是 INVALID_CODE 等錯誤碼或其他訊息）
+ * @returns 經 i18n 翻譯的錯誤訊息
  */
 export function mapError(errorMessage: string): string {
-  // 如果錯誤訊息是全大寫或包含底線，可能是錯誤碼
+  // 全大寫或包含底線的錯誤訊息可能是錯誤碼
   if (/^[A-Z_]+$/.test(errorMessage)) {
     const camelCaseKey = toCamelCase(errorMessage)
 
-    // 嘗試從 i18n errors 區塊獲取翻譯
+    // 嘗試從 i18n errors 區塊取得翻譯
     try {
       const translated = i18nStore.t(
         'errors',
@@ -36,11 +36,11 @@ export function mapError(errorMessage: string): string {
         return translated
       }
     } catch (_e) {
-      // 如果找不到翻譯，返回 unknownError
+      // 找不到翻譯時回傳 unknownError
       return i18nStore.t('errors', 'unknownError')
     }
   }
 
-  // 如果不是錯誤碼格式，直接返回原始訊息（向後兼容）
+  // 非錯誤碼格式直接回傳原始訊息，以維持向後相容
   return errorMessage || i18nStore.t('errors', 'unknownError')
 }

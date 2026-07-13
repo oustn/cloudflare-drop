@@ -1,4 +1,4 @@
-export type Locale = 'zh-CN' | 'zh-TW' | 'en'
+export type Locale = 'zh-TW' | 'en'
 
 export interface TranslationKeys {
   common: {
@@ -67,6 +67,9 @@ export interface TranslationKeys {
     hashLabel: string
   }
   admin: {
+    shareList: string
+    text: string
+    permanent: string
     filename: string
     shareCode: string
     size: string
@@ -77,6 +80,9 @@ export interface TranslationKeys {
     actions: string
     deleteSelected: string
     selected: string
+    delete: string
+    sortedAscending: string
+    sortedDescending: string
   }
   errors: {
     versionMismatch: string
@@ -91,6 +97,9 @@ export interface TranslationKeys {
     codeGenerationFailed: string
     invalidToken: string
     invalidObjectId: string
+    adminDisabled: string
+    chunkUploadFailed: string
+    chunkIncomplete: string
     unknownError: string
   }
 }

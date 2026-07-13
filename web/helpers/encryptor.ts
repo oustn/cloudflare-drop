@@ -3,7 +3,7 @@ import { ArgonType, hash } from 'argon2-browser/dist/argon2-bundled.min.js'
 import { i18nStore } from '../i18n'
 
 export class Encryptor {
-  private static HEADER_METADATA_SIZE = 4 // 增加版本信息（2 字节）
+  private static HEADER_METADATA_SIZE = 4 // 增加版本資訊（2 位元組）
   private static VERSION = 1
   private static SALT_LENGTH = 16
   private static IV_LENGTH = 12
@@ -55,7 +55,7 @@ export class Encryptor {
     const dataHash = await crypto.subtle.digest('SHA-256', encryptedData)
 
     const header = new Uint8Array([
-      ...new Uint8Array(new Uint16Array([this.VERSION]).buffer), // 版本信息
+      ...new Uint8Array(new Uint16Array([this.VERSION]).buffer), // 版本資訊
       ...salt,
       ...iv,
       ...new Uint8Array(encryptedDataKey),

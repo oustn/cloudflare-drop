@@ -11,16 +11,16 @@ export const files = sqliteTable('files', {
   id: text('id')
     .primaryKey()
     .$defaultFn(() => createId()),
-  objectId: text('object_id').notNull(), // 文件 id
-  filename: text('filename'), // 文件名
-  type: text('type'), // 类型
+  objectId: text('object_id').notNull(), // 檔案 ID
+  filename: text('filename'), // 檔案名稱
+  type: text('type'), // 類型
   hash: text('hash').notNull(), // hash 值
-  code: text('code').notNull().unique(), // 分享码
+  code: text('code').notNull().unique(), // 分享碼
   size: integer('size').default(0),
-  is_ephemeral: integer('is_ephemeral', { mode: 'boolean' }).default(false), // 阅后即焚
+  is_ephemeral: integer('is_ephemeral', { mode: 'boolean' }).default(false), // 閱後即焚
   is_encrypted: integer('is_encrypted', { mode: 'boolean' }).default(false),
-  due_date: integer('due_date', { mode: 'timestamp' }).notNull(), // 过期时间
-  created_at: integer('created_at', { mode: 'timestamp' }), // 创建时间
+  due_date: integer('due_date', { mode: 'timestamp' }).notNull(), // 到期時間
+  created_at: integer('created_at', { mode: 'timestamp' }), // 建立時間
 })
 
 export const fileSelectSchema = createSelectSchema(files)

@@ -44,7 +44,7 @@ export class MergeFileChunk extends Endpoint {
     const key = `${payload.uuid}_${payload.sha}`
     const record: ChunkInfo | null = await kv.get(key, 'json')
     if (!record) {
-      throw new Error('文件 Chunk 信息不存在')
+      throw new Error('CHUNK_NOT_FOUND')
     }
 
     const { readable, writable } = new TransformStream()
@@ -55,7 +55,7 @@ export class MergeFileChunk extends Endpoint {
         const chunk = await kv.get(`${key}.${i}`, 'arrayBuffer')
         if (!chunk) {
           await writer.close()
-          throw new Error('文件 Chunk 不完整')
+          throw new Error('CHUNK_INCOMPLETE')
         }
         await writer.write(new Uint8Array(chunk))
       }

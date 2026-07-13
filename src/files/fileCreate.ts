@@ -132,17 +132,17 @@ export class FileCreate extends Endpoint {
 
     const kv = this.getKV(c)
     const key = objectId && !Array.isArray(objectId) ? objectId : createId()
-    // 直接上传
+    // 直接上傳
     if (data && data.byteLength) {
       await kv.put(key, data)
       hash = await sha256(data)
-      // 单个
+      // 單一物件
     } else if (typeof objectId === 'string') {
       const cacheFile = await kv.get(objectId, 'stream')
       if (!cacheFile) {
         return this.error('CHUNK_NOT_FOUND')
       }
-      // 分片存储
+      // 分片儲存
     } else if (Array.isArray(objectId) && objectId.length) {
       await kv.put(key, 'chunks', {
         metadata: objectId,

@@ -9,7 +9,7 @@ export const adminMiddleware = createMiddleware<{
   }
 }>(async (c: Context, next) => {
   if (!c.env.ADMIN_TOKEN) {
-    throw new HTTPException(401, { message: '管理功能未开启' })
+    throw new HTTPException(401, { message: 'ADMIN_DISABLED' })
   }
   const bearer = bearerAuth({ token: c.env.ADMIN_TOKEN })
   return bearer(c, next)

@@ -31,14 +31,14 @@ export class FileChunkCreate extends Endpoint {
     )
 
     if (!uuid || !sha || !chunk || chunkId < 0) {
-      throw new Error('文件 Chunk 上传错误')
+      throw new Error('CHUNK_UPLOAD_FAILED')
     }
 
     const kv = this.getKV(c)
     const key = `${uuid}_${sha}.${chunkId}`
 
     await kv.put(key, await (chunk as File).arrayBuffer(), {
-      expirationTtl: 5 * 60, // 5 分钟过期
+      expirationTtl: 5 * 60, // 5 分鐘後過期
     })
 
     return new Response(null, {

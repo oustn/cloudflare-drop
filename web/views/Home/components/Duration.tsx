@@ -32,7 +32,7 @@ export const Duration = observer((props: DurationProps) => {
   const { t } = useTranslation()
   const { value = '', onChange } = props
 
-  // 動態生成 CONFIG
+  // 動態產生 CONFIG
   const CONFIG = [
     {
       label: t('duration', 'default'),

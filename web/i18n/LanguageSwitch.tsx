@@ -14,8 +14,7 @@ const LANGUAGE_OPTIONS: Array<{
   label: string
   emoji: string
 }> = [
-  { locale: 'zh-CN', label: '简体中文', emoji: '🇨🇳' },
-  { locale: 'zh-TW', label: '繁體中文', emoji: '🇹🇼' },
+  { locale: 'zh-TW', label: '繁體中文（臺灣）', emoji: '🇹🇼' },
   { locale: 'en', label: 'English', emoji: '🇺🇸' },
 ]
 

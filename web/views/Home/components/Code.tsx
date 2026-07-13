@@ -111,7 +111,10 @@ export function Code({ length, value, onChange, disabled }: CodeProps) {
     if (disabled) return
     e.preventDefault()
     const string = e?.clipboardData?.getData('text') ?? ''
-    const pasted = /(?:提取码:\s*|^)([a-zA-Z0-9]{6})(?=\s|\b|$)/.exec(string)
+    const pasted =
+      /(?:(?:提取碼|分享碼|Extract Code|Share Code):\s*|^)([a-zA-Z0-9]{6})(?=\s|\b|$)/i.exec(
+        string,
+      )
     const paste = pasted?.[1].toUpperCase()
     if (!paste) return
     const values = [...codes]

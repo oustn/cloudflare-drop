@@ -29,7 +29,7 @@ vars=""
 [ -n "$SHARE_MAX_SIZE_IN_MB" ] && vars+="SHARE_MAX_SIZE_IN_MB = \"$SHARE_MAX_SIZE_IN_MB\", "
 [ -n "$ADMIN_TOKEN" ] && vars+="ADMIN_TOKEN = \"$ADMIN_TOKEN\", "
 
-# 移除最后多余的逗号和空格
+# 移除結尾多餘的逗號與空格
 vars="${vars%, }"
 
 if [ -n "$vars" ]; then

@@ -120,7 +120,7 @@ const AppMain = observer((props: LayoutProps) => {
         message.error(mapError(data.message))
         return
       }
-      // 打开弹窗
+      // 開啟對話框
       historyApi.insertReceived(
         data.data.code,
         data.data.type !== 'plain/string',

@@ -70,7 +70,7 @@ export class FileFetch extends Endpoint {
     }
 
     if (metadata) {
-      // 大于 25M 不考虑文件类型
+      // 大於 25 MB 時不考慮檔案類型
       const { readable, writable } = new TransformStream()
       const writer = writable.getWriter()
       ;(async () => {
@@ -78,7 +78,7 @@ export class FileFetch extends Endpoint {
           const chunk = await kv.get(metadata[i].objectId, 'arrayBuffer')
           if (!chunk) {
             await writer.close()
-            throw new Error('文件 Chunk 不完整')
+            throw new Error('CHUNK_INCOMPLETE')
           }
           await writer.write(new Uint8Array(chunk))
         }

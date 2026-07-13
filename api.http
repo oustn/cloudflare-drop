@@ -1,4 +1,4 @@
-### 获取文件 chunk info
+### 取得檔案分片資訊 / Get file chunk info
 POST http://localhost:8787/files/chunks
 Content-Type: application/json
 

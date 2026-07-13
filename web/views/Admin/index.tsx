@@ -45,7 +45,7 @@ interface HeadCell {
   tooltip?: string
 }
 
-// 動態生成表頭（需要使用 t() 函數）
+// 動態產生表頭（需要使用 t() 函式）
 function createHeadCells(
   t: ReturnType<typeof useTranslation>['t'],
 ): readonly HeadCell[] {
@@ -102,6 +102,7 @@ interface EnhancedTableProps {
 }
 
 const EnhancedTableHead = observer((props: EnhancedTableProps) => {
+  const { t } = useTranslation()
   const {
     onSelectAllClick,
     order,
@@ -152,8 +153,8 @@ const EnhancedTableHead = observer((props: EnhancedTableProps) => {
                   // @ts-expect-error unknown
                   <Box component="span" sx={visuallyHidden}>
                     {order === 'desc'
-                      ? 'sorted descending'
-                      : 'sorted ascending'}
+                      ? t('admin', 'sortedDescending')
+                      : t('admin', 'sortedAscending')}
                   </Box>
                 ) : null}
               </Comp>
@@ -207,7 +208,7 @@ const EnhancedTableToolbar = observer((props: EnhancedTableToolbarProps) => {
           id="tableTitle"
           component="div"
         >
-          分享列表
+          {t('admin', 'shareList')}
         </Typography>
       )}
       {numSelected > 0 && (
@@ -403,7 +404,9 @@ const AdminMain = observer((props: AdminProps) => {
                         title={row.filename}
                         className="text-ellipsis text-nowrap overflow-hidden"
                       >
-                        {row.type === 'plain/string' ? '[文本]' : row.filename}
+                        {row.type === 'plain/string'
+                          ? `[${t('admin', 'text')}]`
+                          : row.filename}
                       </Typography>
                     </TableCell>
                     <TableCell>{row.code}</TableCell>
@@ -413,13 +416,13 @@ const AdminMain = observer((props: AdminProps) => {
                         title={
                           row.due_date
                             ? dayjs(row.due_date).format(DATE_FORMAT)
-                            : '永久有效'
+                            : t('admin', 'permanent')
                         }
                       >
                         <span>
                           {row.due_date
                             ? dayjs(row.due_date).fromNow()
-                            : '永久有效'}
+                            : t('admin', 'permanent')}
                         </span>
                       </Tooltip>
                     </TableCell>
@@ -441,7 +444,7 @@ const AdminMain = observer((props: AdminProps) => {
                     </TableCell>
                     <TableCell padding="none">
                       <IconButton
-                        aria-label="delete"
+                        aria-label={t('admin', 'delete')}
                         onClick={createRemoveHandler(row.id)}
                       >
                         <DeleteIcon color="action" />

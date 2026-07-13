@@ -77,7 +77,7 @@ export class FileShareCodeFetch extends Endpoint {
 
     const { objectId, ...rest } = file
 
-    // 阅后即焚
+    // 閱後即焚
     if (rest.is_ephemeral) {
       await db
         .update(files)

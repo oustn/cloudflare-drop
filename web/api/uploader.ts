@@ -28,7 +28,7 @@ export class Uploader {
     onUpload?: UploadCallback,
   ): Promise<ApiResponseType<FileUploadedType>> {
     const file: Blob | null = formData.get('file') as Blob
-    // 使用默认的上传
+    // 使用預設上傳方式
     if (file.size <= this.CHUNK_SIZE) {
       const { data } = await axios.put('/files', formData, {
         onUploadProgress: onUpload,
@@ -37,7 +37,7 @@ export class Uploader {
     }
     if (file.size <= this.KV_CHUNK_SIZE) {
       const { objectId, sha } = await this.uploadWithChunk(file, onUpload)
-      formData.delete('file') // 移除 file
+      formData.delete('file') // 移除檔案
       formData.append(
         'fileInfo',
         JSON.stringify({
@@ -76,7 +76,7 @@ export class Uploader {
         chunkId: i,
       }))
       uploadHandler.finished()
-      formData.delete('file') // 移除 file
+      formData.delete('file') // 移除檔案
       formData.append(
         'fileInfo',
         JSON.stringify({
@@ -100,7 +100,7 @@ export class Uploader {
     objectId: string
     sha: string
   }> {
-    // 计算 md5
+    // 計算 SHA-256
     const sha = await this.getSHA(blob)
     const uuid = getUserUUID()
     const size = blob.size
@@ -152,7 +152,7 @@ export class Uploader {
     }
 
     uploadHandler.finished()
-    // 告知合并
+    // 通知後端合併分片
     const mergedResponse = await fetch('/files/chunks/merged', {
       method: 'POST',
       body: JSON.stringify({
