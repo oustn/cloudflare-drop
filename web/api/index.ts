@@ -20,7 +20,7 @@ export async function resolveFileByCode(
 }
 
 async function uploadEncryptedFile(
-  fileInfo: {
+  payload: {
     data: Blob
     isEphemeral: boolean
     duration: string
@@ -28,7 +28,7 @@ async function uploadEncryptedFile(
   },
   onUpload?: (progressEvent: AxiosProgressEvent) => void,
 ): Promise<ApiResponseType<FileUploadedType>> {
-  const { data, isEphemeral, duration, password } = fileInfo
+  const { data, isEphemeral, duration, password } = payload
   const encrypted = await Encryptor.encryptStream(password, data, (event) => {
     onUpload?.(event)
   })
@@ -51,7 +51,7 @@ async function uploadEncryptedFile(
 }
 
 export async function uploadFile(
-  fileInfo: {
+  payload: {
     data: Blob
     isEphemeral?: boolean
     duration?: string | null
@@ -60,8 +60,16 @@ export async function uploadFile(
   onUpload?: (progressEvent: AxiosProgressEvent) => void,
 ): Promise<ApiResponseType<FileUploadedType>> {
   try {
-    const { data, isEphemeral = false, duration = '', password } = fileInfo
+    const { data, isEphemeral = false, duration = '', password } = payload
     if (password) {
+      if (data.type === 'plain/string') {
+        const formData = new FormData()
+        formData.append('file', await Encryptor.encrypt(password, data))
+        formData.append('isEphemeral', JSON.stringify(isEphemeral))
+        formData.append('duration', JSON.stringify(duration))
+        formData.append('isEncrypted', JSON.stringify(true))
+        return await Uploader.upload(formData, onUpload)
+      }
       return await uploadEncryptedFile(
         { data, isEphemeral, duration: duration ?? '', password },
         onUpload,

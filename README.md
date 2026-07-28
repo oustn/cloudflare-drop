@@ -1,6 +1,6 @@
 # Cloudflare Drop
 
-基于 Cloudflare Worker、D1Database 和 KV 实现的轻量级文件分享工具。
+基于 Cloudflare Worker、D1Database、KV 和可选 R2 实现的轻量级文件分享工具。
 
 <img src="assets/IMG_5898.png" width="200">
 <img src="assets/IMG_5899.png" width="200">
@@ -67,9 +67,16 @@
 
 ### 存储后端
 
-新增 `STORAGE_DRIVER` Action 变量，可选值为 `auto`、`kv`、`r2`。默认 `auto`：存在 `R2_BUCKET` 时使用 R2，否则使用 KV。显式设置为 `r2` 但未配置 Bucket 时上传会失败；显式 `kv` 会保留 KV 存储。KV 加密分享最大 50MB，未加密分享仍遵循 `SHARE_MAX_SIZE_IN_MB`。既有分享始终使用它们创建时记录的存储后端。
+新增 `STORAGE_DRIVER` Action 变量，可选值为 `auto`、`kv`、`r2`。默认 `auto`：存在 R2 Binding 时使用 R2，否则使用 KV。显式设置为 `r2` 但未配置 Bucket 时上传会失败；显式 `kv` 会强制使用 KV 存储。KV 加密分享最大 50MB，未加密分享仍遵循 `SHARE_MAX_SIZE_IN_MB`。分享记录会保存创建时实际使用的存储后端，下载和清理时按记录读取对应对象。
 
 启用 R2 时可以额外配置 `R2_BUCKET_JURISDICTION` Action 变量，用于创建和绑定指定 jurisdiction 的 Bucket；不配置时使用 Cloudflare 默认值。
+
+### 上传存储策略
+
+- 文本分享始终存 KV，包括加密文本，避免把短文本对象写入 R2。
+- 小文件直接提交到 `/files`；超过 5MiB 的未加密文件会使用统一上传会话，前端不需要区分 KV 或 R2。
+- KV 模式会按 5MiB 写入最终分片对象，并在完成时写入 manifest；Worker 不再把分片读回内存合并。
+- R2 模式会通过 Worker Binding 创建 multipart upload，浏览器逐片上传到 Worker，由 Worker 直接转发到 R2 multipart part；浏览器不会拿到 R2 Access Key、Secret 或预签名信息。
 
 ### 分享过期时间配置
 

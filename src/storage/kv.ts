@@ -1,6 +1,6 @@
 import { ChunkMetadata, FileStorage, StorageObject } from './types'
 
-const KV_CHUNK_SIZE = 4 * 1024 * 1024
+const KV_CHUNK_SIZE = 5 * 1024 * 1024
 
 function chunkStream(
   kv: KVNamespace,

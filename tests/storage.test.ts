@@ -3,10 +3,10 @@ import { expect, test } from 'vitest'
 import { KvStorage, R2Storage, selectStorage } from '../src/storage'
 
 class MemoryKv {
-  private readonly values = new Map<string, string>()
+  private readonly values = new Map<string, BlobPart>()
   private readonly metadata = new Map<string, unknown>()
 
-  async put(key: string, value: string, options?: { metadata?: unknown }) {
+  async put(key: string, value: BlobPart, options?: { metadata?: unknown }) {
     this.values.set(key, value)
     this.metadata.set(key, options?.metadata ?? null)
   }
@@ -50,7 +50,7 @@ test('auto storage prefers R2 only when it is bound', () => {
   ).toBeInstanceOf(KvStorage)
 })
 
-test('legacy KV chunk metadata is streamed in order', async () => {
+test('KV chunk metadata is streamed in order', async () => {
   const kv = new MemoryKv()
   await kv.put('file', 'chunks', {
     metadata: [{ objectId: 'part-0' }, { objectId: 'part-1' }],
@@ -77,4 +77,23 @@ test('KV storage splits streamed objects and reads them back in order', async ()
 
   const object = await storage.get('file')
   await expect(readText(object?.body ?? null)).resolves.toBe('onetwo')
+})
+
+test('KV storage uses the same 5MiB chunk boundary as upload sessions', async () => {
+  const kv = new MemoryKv()
+  const storage = new KvStorage(kv as unknown as KVNamespace)
+
+  await storage.put('file', new Uint8Array(5 * 1024 * 1024 + 1).buffer)
+
+  const { metadata } = await kv.getWithMetadata('file', 'stream')
+  expect(metadata).toEqual([
+    { objectId: 'file.chunk.0', chunkId: 0 },
+    { objectId: 'file.chunk.1', chunkId: 1 },
+  ])
+  await expect(
+    new Response(await kv.get('file.chunk.0', 'stream')).arrayBuffer(),
+  ).resolves.toHaveProperty('byteLength', 5 * 1024 * 1024)
+  await expect(
+    new Response(await kv.get('file.chunk.1', 'stream')).arrayBuffer(),
+  ).resolves.toHaveProperty('byteLength', 1)
 })

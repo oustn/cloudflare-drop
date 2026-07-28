@@ -100,6 +100,7 @@ export function AppMain(props: LayoutProps) {
   const [text, setText] = useState('')
   const [file, setFile] = useState<File | null>(null)
   const [code, setCode] = useState('')
+  const resolvingCode = useRef<string | null>(null)
 
   const reset = useRef(() => {
     setText('')
@@ -113,6 +114,8 @@ export function AppMain(props: LayoutProps) {
 
   const handleResolveFile = useRef(async (code: string) => {
     if (!code || code.length !== 6) return
+    if (resolvingCode.current === code) return
+    resolvingCode.current = code
     setCode(code)
     handleBackdropOpen()
     try {
@@ -135,6 +138,8 @@ export function AppMain(props: LayoutProps) {
       const data = (e as { message: string }).message || JSON.stringify(e)
       message.error(data)
       handleBackdropClose()
+    } finally {
+      resolvingCode.current = null
     }
   })
 

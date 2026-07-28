@@ -44,6 +44,15 @@ test('deploy workflow verifies Worker bindings before deployment', () => {
   )
 })
 
+test('local start uses a finite D1 migration confirmation', () => {
+  const pkg = JSON.parse(read('package.json')) as {
+    scripts: Record<string, string>
+  }
+
+  expect(pkg.scripts.prestart).toContain("printf 'y\\n'")
+  expect(pkg.scripts.prestart).not.toContain('yes |')
+})
+
 test('R2 deployment docs use the app binding and current storage limits', () => {
   const wranglerExample = read('wrangler.example.toml')
   const readme = read('README.md')

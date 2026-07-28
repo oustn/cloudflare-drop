@@ -9,13 +9,13 @@ import {
   adminMiddleware,
 } from './middlewares'
 import {
-  FileChunkCreate,
   FileCreate,
   FileFetch,
   FileShareCodeFetch,
   FileStreamCreate,
-  GetFileChunkInfo,
-  MergeFileChunk,
+  FileUploadSessionComplete,
+  FileUploadSessionCreate,
+  FileUploadSessionPartCreate,
 } from './files'
 import { DeleteShare, GetInfo, ListShares } from './admin'
 
@@ -45,9 +45,12 @@ const openapi = fromHono(app, {
 
 openapi.put('/files', FileCreate)
 openapi.put('/files/stream', FileStreamCreate)
-openapi.post('/files/chunks', GetFileChunkInfo)
-openapi.put('/files/chunks', FileChunkCreate)
-openapi.post('/files/chunks/merged', MergeFileChunk)
+openapi.post('/files/uploads', FileUploadSessionCreate)
+openapi.put(
+  '/files/uploads/:sessionId/parts/:partNumber',
+  FileUploadSessionPartCreate,
+)
+openapi.post('/files/uploads/:sessionId/complete', FileUploadSessionComplete)
 openapi.get('/files/:id', FileFetch)
 openapi.get('/files/share/:code', FileShareCodeFetch)
 

@@ -6,10 +6,6 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-async function readText(stream: ReadableStream<Uint8Array>) {
-  return new Response(stream).text()
-}
-
 function createDb(
   returningValue = {
     hash: 'sha',
@@ -26,35 +22,6 @@ function createDb(
     db: { insert },
     values,
   }
-}
-
-function stubFixedLengthStream() {
-  const fixedLengths = new WeakMap<ReadableStream<Uint8Array>, number>()
-  vi.stubGlobal(
-    'FixedLengthStream',
-    class FixedLengthStream extends TransformStream<Uint8Array, Uint8Array> {
-      constructor(expectedLength: number) {
-        let bytes = 0
-        super({
-          transform(chunk, controller) {
-            bytes += chunk.byteLength
-            if (bytes > expectedLength) {
-              controller.error(new Error('stream exceeded fixed length'))
-              return
-            }
-            controller.enqueue(chunk)
-          },
-          flush(controller) {
-            if (bytes !== expectedLength) {
-              controller.error(new Error('stream did not match fixed length'))
-            }
-          },
-        })
-        fixedLengths.set(this.readable, expectedLength)
-      }
-    },
-  )
-  return fixedLengths
 }
 
 function createContext({
@@ -87,64 +54,36 @@ function createContext({
   }
 }
 
-test('R2 chunk finalization writes combined chunks with a fixed length stream', async () => {
-  const fixedLengths = stubFixedLengthStream()
-  const chunkData = new Map([
-    ['chunk.0', new TextEncoder().encode('hello ')],
-    ['chunk.1', new TextEncoder().encode('world')],
-  ])
-  const kv = {
-    getWithMetadata: vi.fn(async (key: string) => ({
-      metadata: {
-        size: chunkData.get(key)?.byteLength,
-        hash: 'sha',
-      },
-    })),
-    get: vi.fn(async (key: string, type: string) => {
-      expect(type).toBe('stream')
-      const data = chunkData.get(key)
-      return data ? new Blob([data]).stream() : null
-    }),
-    delete: vi.fn(),
-  } as unknown as KVNamespace
+test('plain text shares are stored in KV even when R2 is configured', async () => {
+  const formData = new FormData()
+  formData.append(
+    'file',
+    new Blob(['hello text'], { type: 'plain/string' }),
+    'text.txt',
+  )
   let storedText = ''
-  const bucket = {
-    put: vi.fn(async (_key: string, value: ReadableStream<Uint8Array>) => {
-      if (fixedLengths.get(value) !== 11) {
-        throw new TypeError('Provided readable stream must have a known length')
-      }
-      storedText = await readText(value)
+  const kv = {
+    put: vi.fn(async (_key: string, value: ArrayBuffer) => {
+      storedText = new TextDecoder().decode(value)
     }),
+  } as unknown as KVNamespace
+  const bucket = {
+    put: vi.fn(),
     delete: vi.fn(),
   } as unknown as R2Bucket
   const { db, values } = createDb()
-  const formData = new FormData()
-  formData.append(
-    'fileInfo',
-    JSON.stringify({
-      objectId: [{ objectId: 'chunk.0' }, { objectId: 'chunk.1' }],
-      name: 'hello.txt',
-      type: 'text/plain',
-      size: 11,
-      sha: 'sha',
-    }),
-  )
 
   const response = await new FileCreate().handle(
     createContext({ formData, bucket, kv, db }) as never,
   )
 
   expect(response).toMatchObject({ result: true })
-  expect(storedText).toBe('hello world')
-  expect(kv.delete).toHaveBeenCalledWith('chunk.0')
-  expect(kv.delete).toHaveBeenCalledWith('chunk.1')
+  expect(storedText).toBe('hello text')
+  expect(bucket.put).not.toHaveBeenCalled()
   expect(values).toHaveBeenCalledWith(
     expect.objectContaining({
-      filename: 'hello.txt',
-      type: 'text/plain',
-      size: 11,
-      hash: 'sha',
-      storage_provider: 'r2',
+      type: 'plain/string',
+      storage_provider: 'kv',
     }),
   )
 })

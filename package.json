@@ -7,7 +7,7 @@
     "generate": "drizzle-kit generate --config data/drizzle.config.ts",
     "predeploy": "npm run build:web && npm run generate && wrangler d1 migrations apply airdrop --remote --env production",
     "deploy": "wrangler deploy --env production",
-    "prestart": "cat .dev.vars > .env.local && yes | wrangler d1 migrations apply airdrop --local",
+    "prestart": "cat .dev.vars > .env.local && printf 'y\\n' | wrangler d1 migrations apply airdrop --local",
     "start": "concurrently \"npm run dev:web\" \"npm run dev:app\"",
     "dev:app": "wrangler dev --ip 0.0.0.0",
     "dev:web": "vite --host",

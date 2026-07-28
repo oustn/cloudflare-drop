@@ -30,6 +30,12 @@ function mockSuccessfulStreamUpload() {
   )
 }
 
+function jsonResponse(data: unknown) {
+  return new Response(JSON.stringify(data), {
+    headers: { 'Content-Type': 'application/json' },
+  })
+}
+
 test('returns an API error when an upload fails', async () => {
   vi.spyOn(Uploader, 'upload').mockRejectedValueOnce(new Error('upload failed'))
 
@@ -49,8 +55,8 @@ test('does not reject encrypted files at the old in-memory encryption limit', as
   ).resolves.toMatchObject({ result: true })
 })
 
-test('allows short encryption passwords', async () => {
-  const data = new Blob(['content'], { type: 'text/plain;charset=utf-8' })
+test('allows short encryption passwords for files', async () => {
+  const data = new Blob(['content'], { type: 'application/octet-stream' })
   mockSuccessfulStreamUpload()
   vi.spyOn(Uploader, 'upload').mockResolvedValueOnce({
     result: true,
@@ -80,72 +86,86 @@ test('allows short encryption passwords', async () => {
   const [, init] = vi.mocked(fetch).mock.calls[0]
   expect((init?.headers as Headers).get('X-Encrypted-Size')).toBe('9')
   expect((init?.headers as Headers).get('X-Plaintext-Type')).toBe(
-    'text/plain;charset=utf-8',
+    'application/octet-stream',
   )
 })
 
-test('finalizes unencrypted chunk uploads with chunk ids instead of merging chunks', async () => {
-  const originalChunkSize = Uploader.CHUNK_SIZE
-  const originalKvChunkSize = Uploader.KV_CHUNK_SIZE
-  const originalMaxKvChunkSize = Uploader.MAX_KV_CHUNK_SIZE
-  Uploader.CHUNK_SIZE = 2
-  Uploader.KV_CHUNK_SIZE = 10
-  Uploader.MAX_KV_CHUNK_SIZE = 20
+test('encrypted text uploads through the normal upload path so the server can keep it in KV', async () => {
+  const data = new Blob(['secret text'], { type: 'plain/string' })
+  const encrypted = new Blob(['encrypted text'], { type: 'plain/string' })
+  vi.spyOn(Encryptor, 'encrypt').mockResolvedValueOnce(encrypted)
+  const upload = vi.spyOn(Uploader, 'upload').mockResolvedValueOnce({
+    result: true,
+    data: { id: 'file-id', code: '123456' },
+    message: 'ok',
+  } as ApiResponseType<FileUploadedType>)
+  const stream = vi.spyOn(Encryptor, 'encryptStream')
 
-  const values = new Map<string, string>()
-  vi.stubGlobal('localStorage', {
-    getItem: (key: string) => values.get(key) ?? null,
-    setItem: (key: string, value: string) => values.set(key, value),
+  await expect(uploadFile({ data, password: 'short' })).resolves.toMatchObject({
+    result: true,
   })
-  vi.spyOn(crypto, 'randomUUID').mockReturnValue(
-    'test-user' as `${string}-${string}-${string}-${string}-${string}`,
-  )
 
-  let finalFormData: FormData | null = null
-  vi.spyOn(axios, 'put').mockImplementation(async (url, body) => {
-    if (url === '/files/chunks') {
-      return { data: null }
-    }
-    if (url === '/files') {
-      finalFormData = body as FormData
-      return {
-        data: {
+  expect(Encryptor.encrypt).toHaveBeenCalledWith('short', data)
+  expect(stream).not.toHaveBeenCalled()
+  const formData = upload.mock.calls[0][0]
+  const uploaded = formData.get('file') as File
+  expect(uploaded.type).toBe('plain/string')
+  await expect(uploaded.text()).resolves.toBe('encrypted text')
+  expect(formData.get('isEncrypted')).toBe('true')
+})
+
+test('large unencrypted uploads use the generic upload session API', async () => {
+  const originalChunkSize = Uploader.CHUNK_SIZE
+  const originalMaxUploadSize = Uploader.MAX_UPLOAD_SIZE
+  Uploader.CHUNK_SIZE = 2
+  Uploader.MAX_UPLOAD_SIZE = 20
+  const put = vi.spyOn(axios, 'put')
+  const fetchMock = vi
+    .spyOn(globalThis, 'fetch')
+    .mockImplementation(async (input, init) => {
+      const url = input.toString()
+      if (url === '/files/uploads') {
+        expect(init?.method).toBe('POST')
+        return jsonResponse({
+          result: true,
+          data: {
+            sessionId: 'session-1',
+            partSize: 2,
+            uploadedParts: [],
+          },
+          message: 'ok',
+        })
+      }
+      if (url === '/files/uploads/session-1/parts/1') {
+        expect(init?.method).toBe('PUT')
+        await expect(new Response(init?.body as BodyInit).text()).resolves.toBe(
+          'ab',
+        )
+        return jsonResponse({ result: true, data: { partNumber: 1 } })
+      }
+      if (url === '/files/uploads/session-1/parts/2') {
+        expect(init?.method).toBe('PUT')
+        await expect(new Response(init?.body as BodyInit).text()).resolves.toBe(
+          'cd',
+        )
+        return jsonResponse({ result: true, data: { partNumber: 2 } })
+      }
+      if (url === '/files/uploads/session-1/parts/3') {
+        expect(init?.method).toBe('PUT')
+        await expect(new Response(init?.body as BodyInit).text()).resolves.toBe(
+          'ef',
+        )
+        return jsonResponse({ result: true, data: { partNumber: 3 } })
+      }
+      if (url === '/files/uploads/session-1/complete') {
+        expect(init?.method).toBe('POST')
+        return jsonResponse({
           result: true,
           data: { id: 'file-id', code: '123456' },
           message: 'ok',
-        },
+        })
       }
-    }
-    throw new Error(`unexpected axios put ${url}`)
-  })
-
-  const fetchMock = vi
-    .spyOn(globalThis, 'fetch')
-    .mockImplementation(async (input) => {
-      if (input === '/files/chunks') {
-        return new Response(
-          JSON.stringify({
-            result: true,
-            data: {
-              sha: 'unused',
-              uuid: 'test-user',
-              size: 6,
-              chunks: [
-                { chunkId: 0, size: 2 },
-                { chunkId: 1, size: 2 },
-                { chunkId: 2, size: 2 },
-              ],
-              finished: [],
-            },
-            message: 'ok',
-          }),
-          { headers: { 'Content-Type': 'application/json' } },
-        )
-      }
-      if (input === '/files/chunks/merged') {
-        throw new Error('chunk merge endpoint should not be called')
-      }
-      throw new Error(`unexpected fetch ${input}`)
+      throw new Error(`unexpected fetch ${url}`)
     })
 
   try {
@@ -156,19 +176,16 @@ test('finalizes unencrypted chunk uploads with chunk ids instead of merging chun
     ).resolves.toMatchObject({ result: true })
 
     expect(fetchMock).not.toHaveBeenCalledWith(
+      '/files/chunks',
+      expect.anything(),
+    )
+    expect(fetchMock).not.toHaveBeenCalledWith(
       '/files/chunks/merged',
       expect.anything(),
     )
-    expect(finalFormData?.get('file')).toBeNull()
-    const fileInfo = JSON.parse(finalFormData?.get('fileInfo') as string)
-    expect(fileInfo.objectId).toEqual([
-      { objectId: `test-user_${fileInfo.sha}.0` },
-      { objectId: `test-user_${fileInfo.sha}.1` },
-      { objectId: `test-user_${fileInfo.sha}.2` },
-    ])
+    expect(put).not.toHaveBeenCalledWith('/files', expect.anything())
   } finally {
     Uploader.CHUNK_SIZE = originalChunkSize
-    Uploader.KV_CHUNK_SIZE = originalKvChunkSize
-    Uploader.MAX_KV_CHUNK_SIZE = originalMaxKvChunkSize
+    Uploader.MAX_UPLOAD_SIZE = originalMaxUploadSize
   }
 })
