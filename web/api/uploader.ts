@@ -16,6 +16,7 @@ interface ChunkInfo {
 }
 
 type UploadCallback = { (progressEvent: AxiosProgressEvent): void }
+type UploadedChunk = { objectId: string }
 
 export class Uploader {
   static KV_CHUNK_SIZE = 25 * 1024 * 1024
@@ -70,10 +71,7 @@ export class Uploader {
           ),
         )
       }
-      const chunkInfo = result.map((d, i) => ({
-        ...d,
-        chunkId: i,
-      }))
+      const chunkInfo = result.flatMap((d) => d.objectId)
       uploadHandler.finished()
       formData.delete('file') // 移除 file
       formData.append(
@@ -96,7 +94,7 @@ export class Uploader {
     blob: Blob,
     onUpload?: UploadCallback,
   ): Promise<{
-    objectId: string
+    objectId: UploadedChunk[]
     sha: string
   }> {
     // 计算 md5
@@ -151,20 +149,13 @@ export class Uploader {
     }
 
     uploadHandler.finished()
-    // 告知合并
-    const mergedResponse = await fetch('/files/chunks/merged', {
-      method: 'POST',
-      body: JSON.stringify({
-        sha,
-        uuid,
+    return {
+      objectId: chunks.map(({ chunkId }) => {
+        const uploaded = chunkInfo.finished.find((d) => d.chunkId === chunkId)
+        return { objectId: uploaded?.objectId ?? `${uuid}_${sha}.${chunkId}` }
       }),
-    })
-
-    const data: ApiResponseType<string> = await mergedResponse.json()
-    if (!data.result) {
-      throw new Error(data.message)
+      sha,
     }
-    return { objectId: data.data!, sha }
   }
 
   private static createMergedProgressEventHandler(

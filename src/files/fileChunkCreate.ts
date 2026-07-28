@@ -50,6 +50,7 @@ export class FileChunkCreate extends Endpoint {
 
     await kv.put(key, await file.arrayBuffer(), {
       expirationTtl: 5 * 60, // 5 分钟过期
+      metadata: { size: file.size, hash: sha },
     })
 
     return new Response(null, {

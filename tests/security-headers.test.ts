@@ -21,4 +21,7 @@ test('adds browser security headers and prevents caching a share lookup', async 
   expect(response.headers.get('content-security-policy')).toContain(
     "default-src 'self'",
   )
+  expect(response.headers.get('content-security-policy')).toContain(
+    "script-src 'self' 'wasm-unsafe-eval'",
+  )
 })

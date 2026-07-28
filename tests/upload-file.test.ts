@@ -1,4 +1,5 @@
 import { afterEach, expect, test, vi } from 'vitest'
+import axios from 'axios'
 
 import { uploadFile } from '../web/api'
 import { Uploader } from '../web/api/uploader'
@@ -6,6 +7,7 @@ import { Encryptor } from '../web/helpers'
 
 afterEach(() => {
   vi.restoreAllMocks()
+  vi.unstubAllGlobals()
 })
 
 function mockSuccessfulStreamUpload() {
@@ -71,4 +73,93 @@ test('allows short encryption passwords', async () => {
       body: expect.any(ReadableStream),
     }),
   )
+})
+
+test('finalizes unencrypted chunk uploads with chunk ids instead of merging chunks', async () => {
+  const originalChunkSize = Uploader.CHUNK_SIZE
+  const originalKvChunkSize = Uploader.KV_CHUNK_SIZE
+  const originalMaxKvChunkSize = Uploader.MAX_KV_CHUNK_SIZE
+  Uploader.CHUNK_SIZE = 2
+  Uploader.KV_CHUNK_SIZE = 10
+  Uploader.MAX_KV_CHUNK_SIZE = 20
+
+  const values = new Map<string, string>()
+  vi.stubGlobal('localStorage', {
+    getItem: (key: string) => values.get(key) ?? null,
+    setItem: (key: string, value: string) => values.set(key, value),
+  })
+  vi.spyOn(crypto, 'randomUUID').mockReturnValue(
+    'test-user' as `${string}-${string}-${string}-${string}-${string}`,
+  )
+
+  let finalFormData: FormData | null = null
+  vi.spyOn(axios, 'put').mockImplementation(async (url, body) => {
+    if (url === '/files/chunks') {
+      return { data: null }
+    }
+    if (url === '/files') {
+      finalFormData = body as FormData
+      return {
+        data: {
+          result: true,
+          data: { id: 'file-id', code: '123456' },
+          message: 'ok',
+        },
+      }
+    }
+    throw new Error(`unexpected axios put ${url}`)
+  })
+
+  const fetchMock = vi
+    .spyOn(globalThis, 'fetch')
+    .mockImplementation(async (input) => {
+      if (input === '/files/chunks') {
+        return new Response(
+          JSON.stringify({
+            result: true,
+            data: {
+              sha: 'unused',
+              uuid: 'test-user',
+              size: 6,
+              chunks: [
+                { chunkId: 0, size: 2 },
+                { chunkId: 1, size: 2 },
+                { chunkId: 2, size: 2 },
+              ],
+              finished: [],
+            },
+            message: 'ok',
+          }),
+          { headers: { 'Content-Type': 'application/json' } },
+        )
+      }
+      if (input === '/files/chunks/merged') {
+        throw new Error('chunk merge endpoint should not be called')
+      }
+      throw new Error(`unexpected fetch ${input}`)
+    })
+
+  try {
+    await expect(
+      uploadFile({
+        data: new File(['abcdef'], 'hello.txt', { type: 'text/plain' }),
+      }),
+    ).resolves.toMatchObject({ result: true })
+
+    expect(fetchMock).not.toHaveBeenCalledWith(
+      '/files/chunks/merged',
+      expect.anything(),
+    )
+    expect(finalFormData?.get('file')).toBeNull()
+    const fileInfo = JSON.parse(finalFormData?.get('fileInfo') as string)
+    expect(fileInfo.objectId).toEqual([
+      { objectId: `test-user_${fileInfo.sha}.0` },
+      { objectId: `test-user_${fileInfo.sha}.1` },
+      { objectId: `test-user_${fileInfo.sha}.2` },
+    ])
+  } finally {
+    Uploader.CHUNK_SIZE = originalChunkSize
+    Uploader.KV_CHUNK_SIZE = originalKvChunkSize
+    Uploader.MAX_KV_CHUNK_SIZE = originalMaxKvChunkSize
+  }
 })
