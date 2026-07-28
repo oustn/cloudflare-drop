@@ -17,7 +17,7 @@
 4. 开启 Action
 5. 部署
 
-> 创建 Cloudflare API Key 时，如果使用 worker 模板创建，请记得添加 D1 的编辑权限。
+> 创建 Cloudflare API Token 时，如果使用 Worker 模板创建，请记得添加 D1、KV 的编辑权限；如果启用 R2，还需要添加 R2 的编辑权限。
 
 ## 更新
 
@@ -29,17 +29,33 @@
 
 执行 `pnpm start` 后，Vite 页面运行在 `http://127.0.0.1:3333`，Worker API 运行在 `http://127.0.0.1:8787`。请通过 Vite 地址打开页面；`/api` 和 `/files` 请求会自动代理到 Worker。直接访问 Worker 的页面路径会重定向到 Vite，避免开发代理携带浏览器 Host 时触发 Vite 500。
 
-## 配置 GitHub Action Secret
+## 配置 GitHub Actions
 
-1. 在初次部署完成后，需要创建 [D1Database](https://developers.cloudflare.com/d1/get-started/#2-create-a-database) 和 [KV](https://developers.cloudflare.com/kv/get-started/#2-create-a-kv-namespace)。KV 始终用于分享元数据、短期下载令牌和 KV 回退存储。
-2. 配置 Secret：在 forked 的仓库 -> **Settings** -> **Secrets and variables** -> **Actions** -> **New repository secret**
-3. 配置以下 Secret：
-   - CUSTOM_DOMAIN （可选，域名，如 drop.example.cn）
-   - D1_ID (D1Database ID)
-   - D1_NAME (D1Database Name)
-   - KV_ID (KV Namespace ID)
-   - R2_BUCKET（可选，R2 Bucket 名称；配置后新文件默认上传至 R2）
-4. 重新运行 Github Actions
+默认会自动确保 D1、KV，并尝试启用 R2：部署脚本会按默认名称查找资源，存在就复用，不存在就创建，然后生成正确的 Worker binding。KV 始终用于分享元数据、短期下载令牌和 KV 回退存储；R2 可用时会绑定到 `FILES`，不可用时默认回退 KV。
+
+必要 Secret：
+
+- CLOUDFLARE_API_TOKEN
+- CLOUDFLARE_ACCOUNT_ID
+
+常用 Variable：
+
+- CUSTOM_DOMAIN（可选，域名，如 drop.example.cn）
+- ADMIN_TOKEN（可选，后台管理 token）
+
+高级 Variable：
+
+- D1_NAME，默认 `cloudflare-drop`
+- KV_NAMESPACE_NAME，默认 `cloudflare-drop-file-drops`
+- R2_BUCKET，默认 `cloudflare-drop-files`
+- R2_BUCKET_JURISDICTION（可选，R2 jurisdiction）
+
+高级 Secret：
+
+- D1_ID（可选，指定已有 D1 Database ID）
+- KV_ID（可选，指定已有 KV Namespace ID）
+
+配置路径：forked 的仓库 -> **Settings** -> **Secrets and variables** -> **Actions**。配置完成后重新运行 Github Actions。
 
 ## 其他配置
 
@@ -51,7 +67,9 @@
 
 ### 存储后端
 
-新增 `STORAGE_DRIVER` Action 变量，可选值为 `auto`、`kv`、`r2`。默认 `auto`：存在 `R2_BUCKET` 时使用 R2，否则使用 KV。显式设置为 `r2` 但未配置 Bucket 时上传会失败；显式 `kv` 会保留 KV 存储，最大支持 100 MB。既有分享始终使用它们创建时记录的存储后端。
+新增 `STORAGE_DRIVER` Action 变量，可选值为 `auto`、`kv`、`r2`。默认 `auto`：存在 `R2_BUCKET` 时使用 R2，否则使用 KV。显式设置为 `r2` 但未配置 Bucket 时上传会失败；显式 `kv` 会保留 KV 存储。KV 加密分享最大 50MB，未加密分享仍遵循 `SHARE_MAX_SIZE_IN_MB`。既有分享始终使用它们创建时记录的存储后端。
+
+启用 R2 时可以额外配置 `R2_BUCKET_JURISDICTION` Action 变量，用于创建和绑定指定 jurisdiction 的 Bucket；不配置时使用 Cloudflare 默认值。
 
 ### 分享过期时间配置
 
@@ -72,7 +90,7 @@
 ## 安全建议
 
 - 生产环境必须使用 HTTPS。Worker 会发送 CSP、HSTS、`Referrer-Policy: no-referrer`、禁止嗅探和禁止嵌入等安全响应头；分享查询、下载 token 和后台 API 响应设置为 `Cache-Control: no-store`。
-- 加密分享密码由创建者自行决定；界面会实时提示密码强度，建议使用至少 12 个字符并混合多种字符。加密文件当前最大 25MB，以避免浏览器在全量 AES-GCM 加密时耗尽内存。未加密文件仍遵循 `SHARE_MAX_SIZE_IN_MB`。
+- 加密分享密码由创建者自行决定；界面会实时提示密码强度，建议使用至少 12 个字符并混合多种字符。新创建的加密分享使用分片认证加密；R2 存储为单个加密对象，KV 存储会拆成 manifest 和 chunks。KV 加密分享最大 50MB，未加密文件仍遵循 `SHARE_MAX_SIZE_IN_MB`。
 - 新创建的加密分享使用 V2 格式：Argon2 参数、独立 IV、原始文件名和 MIME 类型都被纳入认证的加密封装。服务端仅保存 `encrypted-file` 与 `application/octet-stream`；下载后由浏览器恢复真实名称和类型。历史 V1 加密分享仍可读取。
 - Web 加密防护的是存储泄露和数据库泄露。网站部署方仍可通过篡改下发的 JavaScript 窃取密码，因此应保护 Cloudflare、GitHub Actions 和依赖供应链权限。
 

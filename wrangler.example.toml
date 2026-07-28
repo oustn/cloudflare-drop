@@ -44,11 +44,11 @@ enabled = true
 
 # Bind a D1 database. D1 is Cloudflare’s native serverless SQL database.
 # Docs: https://developers.cloudflare.com/workers/wrangler/configuration/#d1-databases
-[[d1_databases]]
-binding = "DB"
-database_name = "airdrop"
-database_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-migrations_dir = "data/migrations"
+# [[d1_databases]]
+# binding = "DB"
+# database_name = "cloudflare-drop"
+# database_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+# migrations_dir = "data/migrations"
 
 # Bind a dispatch namespace. Use Workers for Platforms to deploy serverless functions programmatically on behalf of your customers.
 # Docs: https://developers.cloudflare.com/workers/wrangler/configuration/#dispatch-namespace-bindings-workers-for-platforms
@@ -77,9 +77,9 @@ migrations_dir = "data/migrations"
 
 # Bind a KV Namespace. Use KV as persistent storage for small key-value pairs.
 # Docs: https://developers.cloudflare.com/workers/wrangler/configuration/#kv-namespaces
-[[kv_namespaces]]
-binding = "file_drops"
-id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+# [[kv_namespaces]]
+# binding = "file_drops"
+# id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 
 # Bind an mTLS certificate. Use to present a client certificate when communicating with another service.
 # Docs: https://developers.cloudflare.com/workers/wrangler/configuration/#mtls-certificates
@@ -101,8 +101,9 @@ id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 # Bind an R2 Bucket. Use R2 to store arbitrarily large blobs of data, such as files.
 # Docs: https://developers.cloudflare.com/workers/wrangler/configuration/#r2-buckets
 # [[r2_buckets]]
-# binding = "MY_BUCKET"
-# bucket_name = "my-bucket"
+# binding = "FILES"
+# bucket_name = "cloudflare-drop-files"
+# jurisdiction = "default"
 
 # Bind another Worker service. Use this binding to call another Worker without network overhead.
 # Docs: https://developers.cloudflare.com/workers/wrangler/configuration/#service-bindings
