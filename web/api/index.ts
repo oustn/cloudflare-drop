@@ -29,25 +29,21 @@ async function uploadEncryptedFile(
   onUpload?: (progressEvent: AxiosProgressEvent) => void,
 ): Promise<ApiResponseType<FileUploadedType>> {
   const { data, isEphemeral, duration, password } = payload
-  const encrypted = await Encryptor.encryptStream(password, data, (event) => {
-    onUpload?.(event)
-  })
-  const headers = new Headers({
-    'Content-Type': 'application/octet-stream',
-    'X-Plaintext-Size': `${data.size}`,
-    'X-Encrypted-Size': `${encrypted.size}`,
-    'X-Share-Ephemeral': JSON.stringify(isEphemeral),
-  })
-  if (data.type) headers.set('X-Plaintext-Type', data.type)
-  if (duration) headers.set('X-Share-Duration', duration)
-
-  const response = await fetch('/files/stream', {
-    method: 'PUT',
-    headers,
-    body: encrypted.stream,
-    duplex: 'half',
-  } as RequestInit & { duplex: 'half' })
-  return processResponse(response)
+  const encrypted = await Encryptor.encryptStream(password, data)
+  return Uploader.uploadStream(
+    {
+      stream: encrypted.stream,
+      size: encrypted.size,
+      plaintextSize: data.size,
+      filename: 'encrypted-file',
+      type: data.type || 'application/octet-stream',
+      hash: '',
+      duration,
+      isEphemeral,
+      isEncrypted: true,
+    },
+    onUpload,
+  )
 }
 
 export async function uploadFile(
@@ -68,6 +64,9 @@ export async function uploadFile(
         formData.append('isEphemeral', JSON.stringify(isEphemeral))
         formData.append('duration', JSON.stringify(duration))
         formData.append('isEncrypted', JSON.stringify(true))
+        formData.append('plaintextSize', JSON.stringify(data.size))
+        formData.append('plaintextType', data.type)
+        formData.append('hash', JSON.stringify(''))
         return await Uploader.upload(formData, onUpload)
       }
       return await uploadEncryptedFile(

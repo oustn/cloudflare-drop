@@ -1,5 +1,4 @@
 export * from './fileCreate'
-export * from './fileStreamCreate'
 export * from './fileUploadSession'
 export * from './fileFetch'
 export * from './fileShareCodeFetch'

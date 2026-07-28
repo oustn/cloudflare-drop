@@ -14,6 +14,7 @@ interface UploadSessionCreatePayload {
   filename: string
   type: string
   size: number
+  plaintextSize?: number
   hash: string
   duration: string
   isEphemeral: boolean
@@ -21,6 +22,10 @@ interface UploadSessionCreatePayload {
 }
 
 type UploadCallback = { (progressEvent: AxiosProgressEvent): void }
+
+interface StreamUploadPayload extends UploadSessionCreatePayload {
+  stream: ReadableStream<Uint8Array>
+}
 
 function parseJsonField<T>(value: FormDataEntryValue | null, fallback: T): T {
   if (typeof value !== 'string' || !value) return fallback
@@ -40,6 +45,47 @@ async function readApiResponse<T>(response: Response): Promise<T> {
 export class Uploader {
   static CHUNK_SIZE = 5 * 1024 * 1024
   static MAX_UPLOAD_SIZE = 100 * 1024 * 1024
+
+  static async uploadStream(
+    payload: StreamUploadPayload,
+    onUpload?: UploadCallback,
+  ): Promise<ApiResponseType<FileUploadedType>> {
+    if (payload.size > this.MAX_UPLOAD_SIZE + 2 * 1024 * 1024) {
+      throw new Error(`文件大于 ${this.MAX_UPLOAD_SIZE / (1000 * 1000)}M`)
+    }
+
+    const session = await this.createSession(payload)
+    const expectedParts = Math.ceil(payload.size / session.partSize)
+    let uploaded = 0
+    let index = 0
+
+    for await (const part of this.streamParts(
+      payload.stream,
+      session.partSize,
+    )) {
+      index += 1
+      const partNumber = index
+      const bytes = part.byteLength
+
+      if (
+        session.uploadedParts.some((item) => item.partNumber === partNumber)
+      ) {
+        uploaded += bytes
+        this.emitProgress(uploaded, payload.size, bytes, onUpload)
+        continue
+      }
+
+      await this.uploadPart(session.sessionId, partNumber, new Blob([part]))
+      uploaded += bytes
+      this.emitProgress(uploaded, payload.size, bytes, onUpload)
+    }
+
+    if (index !== expectedParts || uploaded !== payload.size) {
+      throw new Error('加密文件大小不匹配')
+    }
+
+    return await this.completeSession(session.sessionId)
+  }
 
   static async upload(
     formData: FormData,
@@ -125,6 +171,33 @@ export class Uploader {
       },
     )
     await readApiResponse(response)
+  }
+
+  private static async *streamParts(
+    stream: ReadableStream<Uint8Array>,
+    partSize: number,
+  ) {
+    const reader = stream.getReader()
+    let pending = new Uint8Array(0)
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        const combined = new Uint8Array(pending.byteLength + value.byteLength)
+        combined.set(pending)
+        combined.set(value, pending.byteLength)
+        let offset = 0
+        while (combined.byteLength - offset >= partSize) {
+          yield combined.slice(offset, offset + partSize)
+          offset += partSize
+        }
+        pending = combined.slice(offset)
+      }
+      if (pending.byteLength) yield pending
+    } finally {
+      reader.releaseLock()
+    }
   }
 
   private static async completeSession(

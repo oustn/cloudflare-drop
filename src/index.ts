@@ -12,7 +12,6 @@ import {
   FileCreate,
   FileFetch,
   FileShareCodeFetch,
-  FileStreamCreate,
   FileUploadSessionComplete,
   FileUploadSessionCreate,
   FileUploadSessionPartCreate,
@@ -33,7 +32,6 @@ app.use('*', securityMiddleware)
 app.use('/api/*', dbMiddleware)
 app.use('/files/*', dbMiddleware)
 app.use('/files', limitMiddleware)
-app.use('/files/stream', limitMiddleware)
 app.use('/api/admin/*', adminMiddleware)
 app.use('/files/share/*', lookupLimitMiddleware)
 app.use('/', terminalMiddleware)
@@ -44,7 +42,6 @@ const openapi = fromHono(app, {
 })
 
 openapi.put('/files', FileCreate)
-openapi.put('/files/stream', FileStreamCreate)
 openapi.post('/files/uploads', FileUploadSessionCreate)
 openapi.put(
   '/files/uploads/:sessionId/parts/:partNumber',

@@ -62,6 +62,7 @@ export class FileCreate extends Endpoint {
     let isEphemeral = false
     let isEncrypted = false
     let hash = ''
+    let providedHash: string | null = null
     const contentType = c.req.header('Content-Type')
     if (
       contentType?.startsWith('multipart/form-data') ||
@@ -73,12 +74,29 @@ export class FileCreate extends Endpoint {
       duration = this.getFormDataField(formData, 'duration', duration)
       isEphemeral = this.getFormDataField(formData, 'isEphemeral', isEphemeral)
       isEncrypted = this.getFormDataField(formData, 'isEncrypted', isEncrypted)
+      providedHash = this.getFormDataField<string | null>(
+        formData,
+        'hash',
+        null,
+      )
+      const plaintextSize = this.getFormDataField<number | null>(
+        formData,
+        'plaintextSize',
+        null,
+      )
+      const plaintextType = formData.get('plaintextType')
 
       if (file) {
         data = await file.arrayBuffer()
         filename = file.name
         type = file.type ?? mine.getType(filename) ?? 'text/plain'
         size = file.size
+        if (isEncrypted && Number.isInteger(plaintextSize) && plaintextSize) {
+          size = plaintextSize
+        }
+        if (isEncrypted && typeof plaintextType === 'string' && plaintextType) {
+          type = plaintextType
+        }
       }
     } else {
       const blob = await c.req.blob()
@@ -116,7 +134,7 @@ export class FileCreate extends Endpoint {
         : selectStorage(c.env)
     const key = createId()
     await storage.put(key, data)
-    hash = await sha256(data)
+    hash = isEncrypted ? (providedHash ?? '') : await sha256(data)
 
     const db = this.getDB(c)
 

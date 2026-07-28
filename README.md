@@ -74,7 +74,8 @@
 ### 上传存储策略
 
 - 文本分享始终存 KV，包括加密文本，避免把短文本对象写入 R2。
-- 小文件直接提交到 `/files`；超过 5MiB 的未加密文件会使用统一上传会话，前端不需要区分 KV 或 R2。
+- 非加密小文件直接提交到 `/files`；超过 5MiB 的文件使用统一上传会话，前端不需要区分 KV 或 R2。
+- 加密文件会先在浏览器端生成 V2 加密字节流，再按同一个上传会话逐片提交；不再使用独立的 `/files/stream` 上传接口。
 - KV 模式会按 5MiB 写入最终分片对象，并在完成时写入 manifest；Worker 不再把分片读回内存合并。
 - R2 模式会通过 Worker Binding 创建 multipart upload，浏览器逐片上传到 Worker，由 Worker 直接转发到 R2 multipart part；浏览器不会拿到 R2 Access Key、Secret 或预签名信息。
 
@@ -97,8 +98,8 @@
 ## 安全建议
 
 - 生产环境必须使用 HTTPS。Worker 会发送 CSP、HSTS、`Referrer-Policy: no-referrer`、禁止嗅探和禁止嵌入等安全响应头；分享查询、下载 token 和后台 API 响应设置为 `Cache-Control: no-store`。
-- 加密分享密码由创建者自行决定；界面会实时提示密码强度，建议使用至少 12 个字符并混合多种字符。新创建的加密分享使用分片认证加密；R2 存储为单个加密对象，KV 存储会拆成 manifest 和 chunks。KV 加密分享最大 50MB，未加密文件仍遵循 `SHARE_MAX_SIZE_IN_MB`。
-- 新创建的加密分享使用 V2 格式：Argon2 参数、独立 IV、原始文件名和 MIME 类型都被纳入认证的加密封装。服务端仅保存 `encrypted-file` 与 `application/octet-stream`；下载后由浏览器恢复真实名称和类型。历史 V1 加密分享仍可读取。
+- 加密分享密码由创建者自行决定；界面会实时提示密码强度，建议使用至少 12 个字符并混合多种字符。新创建的加密分享使用分片认证加密；上传仍走统一上传会话。R2 存储为单个加密对象，KV 存储会拆成 manifest 和 chunks。KV 加密分享最大 50MB，未加密文件仍遵循 `SHARE_MAX_SIZE_IN_MB`。
+- 新创建的加密分享使用 V2 格式：Argon2 参数、独立 IV、原始文件名和 MIME 类型都被纳入认证的加密封装。服务端仅保存 `encrypted-file` 作为文件名，并保存用于展示的原始 MIME 类型和明文大小；下载后由浏览器恢复真实名称和类型。历史 V1 加密分享仍可读取。
 - Web 加密防护的是存储泄露和数据库泄露。网站部署方仍可通过篡改下发的 JavaScript 窃取密码，因此应保护 Cloudflare、GitHub Actions 和依赖供应链权限。
 
 ## 过期清理

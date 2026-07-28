@@ -10,24 +10,67 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-function mockSuccessfulStreamUpload() {
+function mockEncryptedSessionUpload() {
   vi.spyOn(Encryptor, 'encryptStream').mockResolvedValueOnce({
-    stream: new Blob(['encrypted']).stream(),
-    size: 9,
+    stream: new Blob(['abcdef']).stream(),
+    size: 6,
   })
-  vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
-    new Response(
-      JSON.stringify({
-        result: true,
-        data: { id: 'file-id', code: '123456' },
-        message: '',
-      }),
-      {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      },
-    ),
-  )
+  return vi
+    .spyOn(globalThis, 'fetch')
+    .mockImplementation(async (input, init) => {
+      const url = input.toString()
+      if (url === '/files/uploads') {
+        expect(init?.method).toBe('POST')
+        const payload = JSON.parse(init?.body as string)
+        expect(payload).toMatchObject({
+          filename: 'encrypted-file',
+          type: 'application/octet-stream',
+          size: 6,
+          hash: '',
+          isEncrypted: true,
+        })
+        expect(payload.plaintextSize).toBeGreaterThan(0)
+        return jsonResponse({
+          result: true,
+          data: {
+            sessionId: 'encrypted-session',
+            partSize: 2,
+            uploadedParts: [],
+          },
+          message: 'ok',
+        })
+      }
+      if (url === '/files/uploads/encrypted-session/parts/1') {
+        expect(init?.method).toBe('PUT')
+        await expect(new Response(init?.body as BodyInit).text()).resolves.toBe(
+          'ab',
+        )
+        return jsonResponse({ result: true, data: { partNumber: 1 } })
+      }
+      if (url === '/files/uploads/encrypted-session/parts/2') {
+        expect(init?.method).toBe('PUT')
+        await expect(new Response(init?.body as BodyInit).text()).resolves.toBe(
+          'cd',
+        )
+        return jsonResponse({ result: true, data: { partNumber: 2 } })
+      }
+      if (url === '/files/uploads/encrypted-session/parts/3') {
+        expect(init?.method).toBe('PUT')
+        await expect(new Response(init?.body as BodyInit).text()).resolves.toBe(
+          'ef',
+        )
+        return jsonResponse({ result: true, data: { partNumber: 3 } })
+      }
+      if (url === '/files/uploads/encrypted-session/complete') {
+        expect(init?.method).toBe('POST')
+        return jsonResponse({
+          result: true,
+          data: { id: 'file-id', code: '123456' },
+          message: 'ok',
+        })
+      }
+      throw new Error(`unexpected fetch ${url}`)
+    })
 }
 
 function jsonResponse(data: unknown) {
@@ -48,7 +91,7 @@ test('returns an API error when an upload fails', async () => {
 
 test('does not reject encrypted files at the old in-memory encryption limit', async () => {
   const oversizedFile = { size: 25 * 1000 * 1000 + 1 } as Blob
-  mockSuccessfulStreamUpload()
+  mockEncryptedSessionUpload()
 
   await expect(
     uploadFile({ data: oversizedFile, password: 'long-enough-password' }),
@@ -57,7 +100,7 @@ test('does not reject encrypted files at the old in-memory encryption limit', as
 
 test('allows short encryption passwords for files', async () => {
   const data = new Blob(['content'], { type: 'application/octet-stream' })
-  mockSuccessfulStreamUpload()
+  const fetchMock = mockEncryptedSessionUpload()
   vi.spyOn(Uploader, 'upload').mockResolvedValueOnce({
     result: true,
     data: { id: 'file-id', code: '123456' },
@@ -67,27 +110,9 @@ test('allows short encryption passwords for files', async () => {
   await expect(uploadFile({ data, password: 'short' })).resolves.toMatchObject({
     result: true,
   })
-  expect(Encryptor.encryptStream).toHaveBeenCalledWith(
-    'short',
-    data,
-    expect.any(Function),
-  )
+  expect(Encryptor.encryptStream).toHaveBeenCalledWith('short', data)
   expect(Uploader.upload).not.toHaveBeenCalled()
-  expect(fetch).toHaveBeenCalledWith(
-    '/files/stream',
-    expect.objectContaining({
-      method: 'PUT',
-      body: expect.any(ReadableStream),
-      headers: expect.objectContaining({
-        get: expect.any(Function),
-      }),
-    }),
-  )
-  const [, init] = vi.mocked(fetch).mock.calls[0]
-  expect((init?.headers as Headers).get('X-Encrypted-Size')).toBe('9')
-  expect((init?.headers as Headers).get('X-Plaintext-Type')).toBe(
-    'application/octet-stream',
-  )
+  expect(fetchMock).not.toHaveBeenCalledWith('/files/stream', expect.anything())
 })
 
 test('encrypted text uploads through the normal upload path so the server can keep it in KV', async () => {

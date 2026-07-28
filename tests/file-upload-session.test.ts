@@ -262,6 +262,71 @@ test('missing upload sessions return an API error instead of throwing', async ()
   })
 })
 
+test('encrypted upload sessions validate encrypted bytes but persist plaintext size', async () => {
+  const manifests = new Map<string, string>()
+  const { db, values } = createDb()
+  const kv = {
+    put: vi.fn(
+      async (key: string, value: unknown, _options?: KVNamespacePutOptions) => {
+        if (key.startsWith('upload-session:'))
+          manifests.set(key, value as string)
+      },
+    ),
+    get: vi.fn(async (key: string) => manifests.get(key) ?? null),
+    delete: vi.fn(),
+  } as unknown as KVNamespace
+
+  const init = await new FileUploadSessionCreate().handle(
+    createJsonContext({
+      kv,
+      storageDriver: 'kv',
+      payload: {
+        filename: 'encrypted-file',
+        type: 'application/octet-stream',
+        size: UPLOAD_SESSION_PART_SIZE + 5,
+        plaintextSize: 123,
+        hash: '',
+        duration: '',
+        isEphemeral: false,
+        isEncrypted: true,
+      },
+    }) as never,
+  )
+  const sessionId = (init.data as { sessionId: string }).sessionId
+
+  await new FileUploadSessionPartCreate().handle(
+    createParamContext({
+      sessionId,
+      partNumber: '1',
+      body: new Blob([new Uint8Array(UPLOAD_SESSION_PART_SIZE)]).stream(),
+      kv,
+      storageDriver: 'kv',
+    }) as never,
+  )
+  await new FileUploadSessionPartCreate().handle(
+    createParamContext({
+      sessionId,
+      partNumber: '2',
+      body: new Blob(['12345']).stream(),
+      kv,
+      storageDriver: 'kv',
+    }) as never,
+  )
+
+  const complete = await new FileUploadSessionComplete().handle(
+    createParamContext({ sessionId, kv, db, storageDriver: 'kv' }) as never,
+  )
+
+  expect(complete).toMatchObject({ result: true })
+  expect(values).toHaveBeenCalledWith(
+    expect.objectContaining({
+      filename: 'encrypted-file',
+      size: 123,
+      is_encrypted: true,
+    }),
+  )
+})
+
 test('KV upload sessions store parts as final chunks and complete with chunk metadata', async () => {
   const manifests = new Map<string, string>()
   const puts: Array<{

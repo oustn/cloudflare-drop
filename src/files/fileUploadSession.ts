@@ -12,6 +12,8 @@ import { StorageProvider } from '../storage/types'
 export const UPLOAD_SESSION_PART_SIZE = 5 * 1024 * 1024
 const UPLOAD_SESSION_PREFIX = 'upload-session:'
 const UPLOAD_SESSION_TTL = 60 * 60
+const KV_ENCRYPTED_PLAINTEXT_LIMIT = 50 * 1000 * 1000
+const ENCRYPTED_SESSION_OVERHEAD_ALLOWANCE = 2 * 1024 * 1024
 
 interface UploadedPart {
   partNumber: number
@@ -27,6 +29,7 @@ interface UploadSessionManifest {
   filename: string
   type: string
   size: number
+  shareSize: number
   hash: string
   duration: string
   isEphemeral: boolean
@@ -39,6 +42,7 @@ interface UploadSessionCreatePayload {
   filename?: string
   type?: string
   size?: number
+  plaintextSize?: number
   hash?: string
   duration?: string
   isEphemeral?: boolean
@@ -132,7 +136,7 @@ async function insertShareRecord(
     type: manifest.type,
     hash: manifest.hash,
     due_date: shareDuration.dueDate,
-    size: manifest.size,
+    size: manifest.shareSize,
     is_ephemeral: manifest.isEphemeral,
     is_encrypted: manifest.isEncrypted,
     storage_provider: manifest.provider,
@@ -189,16 +193,40 @@ export class FileUploadSessionCreate extends Endpoint {
     if (!Number.isInteger(size) || size <= 0) {
       return this.error('文件大小信息错误')
     }
+    const shareSize =
+      payload.isEncrypted && payload.plaintextSize !== undefined
+        ? payload.plaintextSize
+        : size
+    if (!Number.isInteger(shareSize) || shareSize <= 0) {
+      return this.error('文件大小信息错误')
+    }
 
     const envMax = Number.parseInt(c.env.SHARE_MAX_SIZE_IN_MB, 10)
     const max = Number.isNaN(envMax) || envMax <= 0 ? 10 : envMax
-    if (size > max * 1000 * 1000) {
+    const maxBytes = max * 1000 * 1000
+    if (shareSize > maxBytes) {
+      return this.error(`文件大于 ${max}M`)
+    }
+    if (!payload.isEncrypted && size > maxBytes) {
+      return this.error(`文件大于 ${max}M`)
+    }
+    if (
+      payload.isEncrypted &&
+      size > maxBytes + ENCRYPTED_SESSION_OVERHEAD_ALLOWANCE
+    ) {
       return this.error(`文件大于 ${max}M`)
     }
 
     const sessionId = createId()
     const objectId = createId()
     const provider = chooseProvider(c.env, type)
+    if (
+      provider === 'kv' &&
+      payload.isEncrypted &&
+      shareSize > KV_ENCRYPTED_PLAINTEXT_LIMIT
+    ) {
+      return this.error('KV 加密分享暂不支持大于 50M 的文件')
+    }
     const manifest: UploadSessionManifest = {
       sessionId,
       provider,
@@ -206,6 +234,7 @@ export class FileUploadSessionCreate extends Endpoint {
       filename,
       type,
       size,
+      shareSize,
       hash: payload.hash ?? '',
       duration: payload.duration ?? '',
       isEphemeral: Boolean(payload.isEphemeral),

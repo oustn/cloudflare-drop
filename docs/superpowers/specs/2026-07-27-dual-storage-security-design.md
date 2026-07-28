@@ -39,8 +39,8 @@ has been resolved successfully.
 ## Storage Adapters
 
 A storage module owns provider selection for direct uploads, downloads, and
-deletion. Large unencrypted uploads use a server-issued upload session instead
-of the old client-provided chunk descriptor flow.
+deletion. File uploads use a server-issued upload session instead of the old
+client-provided chunk descriptor flow whenever they need parts.
 
 KV sessions write each uploaded part directly as a final 5MiB chunk object and
 store an object manifest only after all parts are present. Downloads read the
@@ -51,8 +51,9 @@ request is proxied by the Worker directly into the multipart upload, and
 completion records only the final object key in D1. The browser never receives
 R2 credentials or provider-specific object keys.
 
-Text shares always use KV, including encrypted text. Encrypted file shares use
-the streaming encryption upload path; when KV is selected, encrypted file
+Text shares always use KV, including encrypted text. Encrypted file shares are
+encrypted in the browser first, then the encrypted bytes use the same upload
+session endpoints as regular file uploads; when KV is selected, encrypted file
 shares are limited to 50MB.
 
 Every part upload is checked against the server-issued upload manifest: the
