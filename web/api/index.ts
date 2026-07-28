@@ -35,8 +35,10 @@ async function uploadEncryptedFile(
   const headers = new Headers({
     'Content-Type': 'application/octet-stream',
     'X-Plaintext-Size': `${data.size}`,
+    'X-Encrypted-Size': `${encrypted.size}`,
     'X-Share-Ephemeral': JSON.stringify(isEphemeral),
   })
+  if (data.type) headers.set('X-Plaintext-Type', data.type)
   if (duration) headers.set('X-Share-Duration', duration)
 
   const response = await fetch('/files/stream', {
@@ -141,6 +143,9 @@ export async function fetchFile(
     const a = document.createElement('a')
     a.href = url
     a.download = file.name
+    a.addEventListener('click', (event) => {
+      event.stopPropagation()
+    })
     document.body.appendChild(a)
     a.click()
 

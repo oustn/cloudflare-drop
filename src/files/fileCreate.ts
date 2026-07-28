@@ -72,6 +72,18 @@ function combineStreams(
   })
 }
 
+function createKnownLengthStream(
+  stream: ReadableStream<Uint8Array>,
+  expectedLength: number,
+) {
+  const fixedLengthStream = new FixedLengthStream(expectedLength)
+  const pipe = stream.pipeTo(fixedLengthStream.writable)
+  pipe.catch(() => {
+    // The readable side will surface the same failure to storage.put().
+  })
+  return { readable: fixedLengthStream.readable, pipe }
+}
+
 export class FileCreate extends Endpoint {
   schema = {
     responses: {
@@ -214,11 +226,24 @@ export class FileCreate extends Endpoint {
       if (!cacheFile) {
         return this.error('分片上传的文件不存在')
       }
-      await storage.put(key, cacheFile)
+      if (storage.provider === 'r2') {
+        const fixed = createKnownLengthStream(cacheFile, size)
+        await storage.put(key, fixed.readable)
+        await fixed.pipe
+      } else {
+        await storage.put(key, cacheFile)
+      }
       await kv.delete(objectId)
       // 分片存储
     } else if (Array.isArray(objectId) && objectId.length) {
-      await storage.put(key, combineStreams(kv, objectId))
+      const combined = combineStreams(kv, objectId)
+      if (storage.provider === 'r2') {
+        const fixed = createKnownLengthStream(combined, size)
+        await storage.put(key, fixed.readable)
+        await fixed.pipe
+      } else {
+        await storage.put(key, combined)
+      }
       await Promise.all(objectId.map((chunk) => kv.delete(chunk.objectId)))
     }
 

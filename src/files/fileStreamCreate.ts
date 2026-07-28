@@ -27,6 +27,24 @@ function parsePlaintextSize(value: string | undefined) {
   return size
 }
 
+function parsePlaintextType(value: string | undefined) {
+  const type = value?.trim()
+  if (!type || type.length > 255) return 'application/octet-stream'
+  return type
+}
+
+function createKnownLengthStream(
+  stream: ReadableStream<Uint8Array>,
+  expectedLength: number,
+) {
+  const fixedLengthStream = new FixedLengthStream(expectedLength)
+  const pipe = stream.pipeTo(fixedLengthStream.writable)
+  pipe.catch(() => {
+    // The readable side will surface the same failure to storage.put().
+  })
+  return { readable: fixedLengthStream.readable, pipe }
+}
+
 function limitStream(
   stream: ReadableStream<Uint8Array>,
   maxBytes: number,
@@ -99,6 +117,7 @@ export class FileStreamCreate extends Endpoint {
     const body = c.req.raw.body
     if (!body) return this.error('分享内容为空')
 
+    const encryptedSize = parsePlaintextSize(c.req.header('x-encrypted-size'))
     let shareDuration: { permanent: boolean; dueDate: Date }
     try {
       shareDuration = resolveShareDuration(
@@ -124,19 +143,34 @@ export class FileStreamCreate extends Endpoint {
           : `文件大于 ${max}M`,
       )
     }
+    if (encryptedSize !== null && encryptedSize > uploadLimitBytes) {
+      return this.error(
+        storage.provider === 'kv'
+          ? 'KV 加密分享暂不支持大于 50M 的文件'
+          : `文件大于 ${max}M`,
+      )
+    }
+    if (storage.provider === 'r2' && encryptedSize === null) {
+      return this.error('加密文件大小信息缺失')
+    }
 
     try {
-      await storage.put(
-        objectId,
-        limitStream(
-          body,
-          uploadLimitBytes,
-          storage.provider === 'kv'
-            ? 'KV 加密分享暂不支持大于 50M 的文件'
-            : `文件大于 ${max}M`,
-        ),
+      const limitedStream = limitStream(
+        body,
+        uploadLimitBytes,
+        storage.provider === 'kv'
+          ? 'KV 加密分享暂不支持大于 50M 的文件'
+          : `文件大于 ${max}M`,
       )
+      if (storage.provider === 'r2') {
+        const fixed = createKnownLengthStream(limitedStream, encryptedSize!)
+        await storage.put(objectId, fixed.readable)
+        await fixed.pipe
+      } else {
+        await storage.put(objectId, limitedStream)
+      }
     } catch (error) {
+      console.error('FileStreamCreate storage.put failed', error)
       try {
         await storage.delete(objectId)
       } catch (_cleanupError) {
@@ -150,7 +184,7 @@ export class FileStreamCreate extends Endpoint {
     const insert: Omit<InsertFileType, 'code'> = {
       objectId,
       filename: 'encrypted-file',
-      type: 'application/octet-stream',
+      type: parsePlaintextType(c.req.header('x-plaintext-type')),
       hash: '',
       due_date: shareDuration.dueDate,
       size: plaintextSize,

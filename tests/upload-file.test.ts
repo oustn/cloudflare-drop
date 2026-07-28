@@ -13,6 +13,7 @@ afterEach(() => {
 function mockSuccessfulStreamUpload() {
   vi.spyOn(Encryptor, 'encryptStream').mockResolvedValueOnce({
     stream: new Blob(['encrypted']).stream(),
+    size: 9,
   })
   vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
     new Response(
@@ -49,7 +50,7 @@ test('does not reject encrypted files at the old in-memory encryption limit', as
 })
 
 test('allows short encryption passwords', async () => {
-  const data = new Blob(['content'])
+  const data = new Blob(['content'], { type: 'text/plain;charset=utf-8' })
   mockSuccessfulStreamUpload()
   vi.spyOn(Uploader, 'upload').mockResolvedValueOnce({
     result: true,
@@ -71,7 +72,15 @@ test('allows short encryption passwords', async () => {
     expect.objectContaining({
       method: 'PUT',
       body: expect.any(ReadableStream),
+      headers: expect.objectContaining({
+        get: expect.any(Function),
+      }),
     }),
+  )
+  const [, init] = vi.mocked(fetch).mock.calls[0]
+  expect((init?.headers as Headers).get('X-Encrypted-Size')).toBe('9')
+  expect((init?.headers as Headers).get('X-Plaintext-Type')).toBe(
+    'text/plain;charset=utf-8',
   )
 })
 

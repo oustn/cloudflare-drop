@@ -27,6 +27,7 @@ interface EncryptionProgress {
 
 interface EncryptedStream {
   stream: ReadableStream<Uint8Array>
+  size: number
 }
 
 export class Encryptor {
@@ -280,11 +281,18 @@ export class Encryptor {
       this.uint32(encryptedMetadata.length),
       encryptedMetadata,
     )
+    const totalChunks = Math.ceil(blob.size / this.V2_CHUNK_SIZE)
+    const encryptedSize =
+      this.HEADER_LENGTH_SIZE +
+      header.length +
+      blob.size +
+      totalChunks * this.AES_GCM_TAG_LENGTH +
+      this.FOOTER_CIPHERTEXT_LENGTH
 
     const stream = new ReadableStream<Uint8Array>({
       start: async (controller) => {
         let plaintextSize = 0
-        let totalChunks = 0
+        let chunkIndex = 0
         try {
           controller.enqueue(this.uint32(header.length))
           controller.enqueue(header)
@@ -293,13 +301,13 @@ export class Encryptor {
             blob.stream(),
             this.V2_CHUNK_SIZE,
           )) {
-            if (totalChunks >= 0xffff_ffff) throw new Error('文件过大')
+            if (chunkIndex >= 0xffff_ffff) throw new Error('文件过大')
             const encryptedChunk = new Uint8Array(
               await this.subtle().encrypt(
                 {
                   name: 'AES-GCM',
-                  iv: this.frameIv(frameNoncePrefix, totalChunks),
-                  additionalData: this.frameAdditionalData(header, totalChunks),
+                  iv: this.frameIv(frameNoncePrefix, chunkIndex),
+                  additionalData: this.frameAdditionalData(header, chunkIndex),
                 },
                 dataKey,
                 chunk,
@@ -307,7 +315,7 @@ export class Encryptor {
             )
             controller.enqueue(encryptedChunk)
             plaintextSize += chunk.byteLength
-            totalChunks += 1
+            chunkIndex += 1
             onProgress?.(
               this.progressEvent(
                 plaintextSize,
@@ -326,7 +334,7 @@ export class Encryptor {
                 additionalData: this.footerAdditionalData(header),
               },
               dataKey,
-              this.createFooterPlaintext(totalChunks, plaintextSize),
+              this.createFooterPlaintext(chunkIndex, plaintextSize),
             ),
           )
           controller.enqueue(encryptedFooter)
@@ -338,7 +346,7 @@ export class Encryptor {
       },
     })
 
-    return { stream }
+    return { stream, size: encryptedSize }
   }
 
   static async encrypt(password: string, blob: File | Blob) {

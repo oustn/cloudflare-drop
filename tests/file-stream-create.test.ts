@@ -1,9 +1,39 @@
-import { expect, test, vi } from 'vitest'
+import { afterEach, expect, test, vi } from 'vitest'
 
 import { FileStreamCreate } from '../src/files/fileStreamCreate'
 
+afterEach(() => {
+  vi.unstubAllGlobals()
+})
+
 async function readText(stream: ReadableStream<Uint8Array>) {
   return new Response(stream).text()
+}
+
+function stubFixedLengthStream() {
+  vi.stubGlobal(
+    'FixedLengthStream',
+    class FixedLengthStream extends TransformStream<Uint8Array, Uint8Array> {
+      constructor(expectedLength: number) {
+        let bytes = 0
+        super({
+          transform(chunk, controller) {
+            bytes += chunk.byteLength
+            if (bytes > expectedLength) {
+              controller.error(new Error('stream exceeded fixed length'))
+              return
+            }
+            controller.enqueue(chunk)
+          },
+          flush(controller) {
+            if (bytes !== expectedLength) {
+              controller.error(new Error('stream did not match fixed length'))
+            }
+          },
+        })
+      }
+    },
+  )
 }
 
 function createDb(
@@ -59,6 +89,7 @@ function createContext({
 }
 
 test('encrypted stream uploads store the request body through the selected storage', async () => {
+  stubFixedLengthStream()
   let storedKey = ''
   let storedText = ''
   const bucket = {
@@ -77,6 +108,7 @@ test('encrypted stream uploads store the request body through the selected stora
       db,
       headers: {
         'x-plaintext-size': '9',
+        'x-encrypted-size': '9',
         'x-share-duration': '1day',
         'x-share-ephemeral': 'true',
       },
@@ -94,6 +126,62 @@ test('encrypted stream uploads store the request body through the selected stora
       is_ephemeral: true,
       is_encrypted: true,
       storage_provider: 'r2',
+    }),
+  )
+})
+
+test('R2 encrypted stream uploads require an exact encrypted byte length', async () => {
+  const bucket = {
+    put: vi.fn(),
+    delete: vi.fn(),
+  } as unknown as R2Bucket
+  const { db } = createDb()
+  const endpoint = new FileStreamCreate()
+
+  const response = await endpoint.handle(
+    createContext({
+      bucket,
+      db,
+      headers: {
+        'x-plaintext-size': '9',
+      },
+    }) as never,
+  )
+
+  expect(response).toMatchObject({
+    result: false,
+    message: '加密文件大小信息缺失',
+  })
+  expect(bucket.put).not.toHaveBeenCalled()
+})
+
+test('encrypted text stream uploads keep the plaintext share type for resolving', async () => {
+  stubFixedLengthStream()
+  const bucket = {
+    put: vi.fn(async (_key: string, value: ReadableStream<Uint8Array>) => {
+      await readText(value)
+    }),
+    delete: vi.fn(),
+  } as unknown as R2Bucket
+  const { db, values } = createDb()
+  const endpoint = new FileStreamCreate()
+
+  const response = await endpoint.handle(
+    createContext({
+      bucket,
+      db,
+      headers: {
+        'x-plaintext-size': '9',
+        'x-encrypted-size': '9',
+        'x-plaintext-type': 'plain/string',
+      },
+    }) as never,
+  )
+
+  expect(response).toMatchObject({ result: true })
+  expect(values).toHaveBeenCalledWith(
+    expect.objectContaining({
+      type: 'plain/string',
     }),
   )
 })

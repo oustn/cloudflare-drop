@@ -73,6 +73,17 @@ test('V2 streaming encryption decrypts chunked data and encrypted metadata', asy
   await expect(decrypted.blob.text()).resolves.toBe(content)
 })
 
+test('V2 streaming encryption reports the exact encrypted byte length', async () => {
+  const file = new File(['hello encrypted size'.repeat(150_000)], '报告.txt', {
+    type: 'text/plain',
+  })
+
+  const encrypted = await Encryptor.encryptStream('secret', file)
+  const bytes = await collect(encrypted.stream)
+
+  expect(encrypted.size).toBe(bytes.byteLength)
+})
+
 test('V2 streaming encryption rejects tampered frame data', async () => {
   const encrypted = await Encryptor.encryptStream(
     'secret',
