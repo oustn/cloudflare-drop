@@ -1,9 +1,14 @@
 import { z } from 'zod'
 import { Context } from 'hono'
-import { eq } from 'drizzle-orm'
-
 import { Endpoint } from '../endpoint'
-import { files, fileSelectSchema } from '../../data/schemas'
+import { fileSelectSchema } from '../../data/schemas'
+import {
+  consumeDownloadGrant,
+  resolveDownloadGrant,
+  ShareError,
+} from '../shares'
+import { storageForProvider } from '../storage'
+import { contentDisposition, responseContentType } from '../http'
 
 export class FileFetch extends Endpoint {
   schema = {
@@ -42,71 +47,29 @@ export class FileFetch extends Endpoint {
     const id = data.params.id
     const token = data.query.token
     const kv = this.getKV(c)
-    const tokenValue = await kv.get(token, 'text')
-    if (!tokenValue || tokenValue !== token) {
-      return this.error('无效的 token', true)
-    }
-    await kv.delete(token)
-    const db = this.getDB(c)
-    const [record] = await db.select().from(files).where(eq(files.id, id))
-    if (!record) {
-      return this.error('无效的 object id', true)
-    }
-    const objectId = record.objectId
+    try {
+      const record = await resolveDownloadGrant(this.getDB(c), kv, token, id)
+      const storage = storageForProvider(c.env, record.storage_provider)
+      const object = await storage.get(record.objectId)
+      if (!object) return this.error('Not found', true, 404)
+      await consumeDownloadGrant(kv, token)
 
-    const {
-      value: file,
-      metadata,
-    }: {
-      value: null | ArrayBuffer
-      metadata: null | Array<{
-        objectId: string
-        chunkId: number
-      }>
-    } = await kv.getWithMetadata(objectId, 'arrayBuffer')
-
-    if (!file && !metadata) {
-      return this.error('Not found', true, 404)
-    }
-
-    if (metadata) {
-      // 大于 25M 不考虑文件类型
-      const { readable, writable } = new TransformStream()
-      const writer = writable.getWriter()
-      ;(async () => {
-        for (let i = 0; i < metadata.length; i++) {
-          const chunk = await kv.get(metadata[i].objectId, 'arrayBuffer')
-          if (!chunk) {
-            await writer.close()
-            throw new Error('文件 Chunk 不完整')
-          }
-          await writer.write(new Uint8Array(chunk))
-        }
-        await writer.close()
-      })().then()
-
-      return new Response(readable, {
+      const isText = record.type === 'plain/string'
+      return new Response(object.body, {
         status: 200,
-        headers: {
-          'Content-Type': record.type ?? 'application/octet-stream',
-          'Content-Disposition': `attachment; filename="${record.filename}"`,
-        },
+        headers: new Headers({
+          'Content-Type': responseContentType(record.type),
+          'Content-Disposition': contentDisposition(
+            record.filename ?? 'download',
+            isText || Boolean(record.is_encrypted),
+          ),
+        }),
       })
+    } catch (error) {
+      return this.error(
+        error instanceof ShareError ? error.message : '文件读取失败',
+        true,
+      )
     }
-
-    const isText = record.type === 'plain/string'
-
-    return new Response(file, {
-      status: 200,
-      headers: new Headers({
-        'Content-Type': isText
-          ? 'plain/text'
-          : (record.type ?? 'application/octet-stream'),
-        'Content-Disposition':
-          isText || record.is_encrypted
-            ? 'inline'
-            : `attachment; filename="${record.filename}"`,
-      }),
-    })
   }
 }

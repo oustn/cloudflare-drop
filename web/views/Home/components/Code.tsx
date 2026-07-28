@@ -1,6 +1,8 @@
-import { useState, useEffect, useRef } from 'preact/hooks'
+import { useEffect, useRef, useState } from 'preact/hooks'
 import TextField from '@mui/material/TextField'
 import Box from '@mui/material/Box'
+
+import { applyDigits, digitsOnly } from './codeInput'
 
 interface CodeProps {
   length: number
@@ -9,138 +11,105 @@ interface CodeProps {
   onChange?: (value: string) => void
 }
 
-function isValidateCode(str: string | string[], length = 6) {
-  if (!str) return false
-  if (str.length !== length) return false
-  return (Array.isArray(str) ? str : str.split('')).every((d) =>
-    /^[a-zA-Z\d]$/.test(d),
+function toValues(value: string | undefined, length: number, disabled = false) {
+  const code = (disabled ? (value ?? '') : digitsOnly(value ?? '')).slice(
+    0,
+    length,
   )
+  return [...code, ...new Array(Math.max(length - code.length, 0)).fill('')]
 }
 
-let isComposition = false
-
-export function Code({ length, value, onChange, disabled }: CodeProps) {
-  const [codes, updateCodes] = useState<Array<string>>(
-    value ? value.split('') : new Array(length).fill(''),
-  )
+export function Code({ length, value, onChange, disabled = false }: CodeProps) {
+  const [codes, updateCodes] = useState(() => toValues(value, length, disabled))
+  const inputs = useRef<Array<HTMLInputElement | null>>([])
+  const composing = useRef(false)
 
   useEffect(() => {
-    if (codes.join('') === value) return
-    updateCodes((value ?? '').split(''))
-  }, [value])
+    updateCodes(toValues(value, length, disabled))
+  }, [value, length, disabled])
 
   useEffect(() => {
     if (value) return
-    const code =
-      new URL(window.location.href).searchParams.get('code')?.toUpperCase() ??
-      ''
-    if (code.length === length && isValidateCode(code, length)) {
-      updateCodes(code.split(''))
-    }
-  }, [])
+    const code = new URL(window.location.href).searchParams.get('code') ?? ''
+    const values = toValues(code, length)
+    if (values.every(Boolean)) updateCodes(values)
+  }, [length, value])
 
   useEffect(() => {
-    if (
-      codes.length === length &&
-      codes.every((d) => /^[a-zA-Z\d]$/.test(d)) &&
-      onChange
-    ) {
-      onChange(codes.join(''))
-    }
+    if (codes.every(Boolean)) onChange?.(codes.join(''))
   }, [codes, onChange])
 
-  const update = (key: string, index: number) => {
-    if (index < 0 || index >= length) return
-    const values = [...codes]
-    values[index] = key
-    updateCodes(values)
+  const focus = (index: number) => {
+    const target = inputs.current[Math.max(0, Math.min(index, length - 1))]
+    requestAnimationFrame(() => target?.focus())
   }
 
-  const el = useRef<HTMLDivElement>(null)
+  const setCodes = (next: string[]) => updateCodes(next.slice(0, length))
 
-  const handleAutoFocus = (index: number) => {
-    if (!el.current) return
-    const i = Math.max(0, Math.min(index, length - 1))
-    const inputs = el.current.querySelectorAll('input')
-    if (inputs[i]) {
-      setTimeout(() => {
-        inputs[i].focus()
-      })
+  const handleInput = (event: InputEvent, index: number) => {
+    if (disabled || composing.current) return
+    const target = event.target
+    if (!(target instanceof HTMLInputElement)) return
+    const entered = digitsOnly(target.value)
+    const result = applyDigits(codes, index, entered)
+    target.value = result.values[index]
+    setCodes(result.values)
+    if (entered) {
+      focus(result.focusIndex)
     }
   }
 
-  const handleInput = (e: InputEvent, index: number) => {
-    if (disabled || isComposition) return
-    e.preventDefault()
-    e.stopPropagation()
-    const target: HTMLInputElement = e.target as HTMLInputElement
-    const value = target.value.slice(0, 1).toUpperCase()
-    if (!/^[a-zA-Z\d]$/.test(value)) {
-      target.value = ''
+  const handleKeyDown = (event: KeyboardEvent, index: number) => {
+    if (disabled) return
+    if (event.key === 'Backspace') {
+      event.preventDefault()
+      const next = [...codes]
+      if (next[index]) {
+        next[index] = ''
+      } else if (index > 0) {
+        next[index - 1] = ''
+        focus(index - 1)
+      }
+      setCodes(next)
       return
     }
-    target.value = value
-
-    update(value, index)
-
-    if (index < length - 1) {
-      handleAutoFocus(index + 1)
+    if (event.key === 'ArrowLeft' && index > 0) {
+      event.preventDefault()
+      focus(index - 1)
     }
+    if (event.key === 'ArrowRight' && index < length - 1) {
+      event.preventDefault()
+      focus(index + 1)
+    }
+    if (event.key === 'Enter' && codes.every(Boolean))
+      onChange?.(codes.join(''))
   }
 
-  const handleKeyUp = (e: KeyboardEvent, index: number) => {
+  const handlePaste = (event: ClipboardEvent, index: number) => {
     if (disabled) return
-    if (e.key === 'Backspace') {
-      update('', index)
-      if (index > 0) {
-        handleAutoFocus(index - 1)
-      }
-    }
-
-    if (
-      e.key === 'Enter' &&
-      codes.length === length &&
-      codes.every((d) => /^[a-zA-Z\d]$/.test(d)) &&
-      onChange
-    ) {
-      onChange(codes.join(''))
-    }
-  }
-
-  const handlePaste = (e: ClipboardEvent, index: number) => {
-    if (disabled) return
-    e.preventDefault()
-    const string = e?.clipboardData?.getData('text') ?? ''
-    const pasted = /(?:提取码:\s*|^)([a-zA-Z0-9]{6})(?=\s|\b|$)/.exec(string)
-    const paste = pasted?.[1].toUpperCase()
-    if (!paste) return
-    const values = [...codes]
-    for (let i = 0; i < length; i++) {
-      values[index + i] = paste[i] ?? ''
-    }
-    updateCodes(values)
-    handleAutoFocus(index + paste.length)
-  }
-
-  const handleCompositionStart = () => {
-    isComposition = true
-  }
-
-  const handleCompositionEnd = () => {
-    isComposition = false
+    event.preventDefault()
+    const result = applyDigits(
+      codes,
+      index,
+      event.clipboardData?.getData('text') ?? '',
+    )
+    if (result.values.join('') === codes.join('')) return
+    setCodes(result.values)
+    focus(result.focusIndex)
   }
 
   return (
-    <Box ref={el} className="flex gap-2">
-      {new Array(length).fill(1).map((_, index) => (
-        <Box className="relative">
+    <Box className="flex gap-2">
+      {codes.map((code, index) => (
+        <Box className="relative" key={index}>
           <TextField
-            value={codes[index] ?? ''}
+            disabled={disabled}
+            inputRef={(element) => {
+              inputs.current[index] = element
+            }}
+            value={code}
             sx={{
-              '.MuiInputBase-root': {
-                fontSize: 20,
-              },
-
+              '.MuiInputBase-root': { fontSize: 20 },
               '.MuiInputBase-root input': {
                 paddingBlock: '0.4em',
                 textAlign: 'center',
@@ -148,15 +117,23 @@ export function Code({ length, value, onChange, disabled }: CodeProps) {
             }}
             slotProps={{
               htmlInput: {
+                'aria-label': `取件码第 ${index + 1} 位`,
                 'data-bwignore': 'off',
-                inputmode: 'email',
+                autoComplete: index === 0 ? 'one-time-code' : 'off',
+                inputMode: 'numeric',
+                maxLength: 1,
+                pattern: '[0-9]*',
               },
             }}
-            onCompositionStart={handleCompositionStart}
-            onCompositionEnd={handleCompositionEnd}
-            onInput={(e) => handleInput(e, index)}
-            onKeyUp={(e) => handleKeyUp(e, index)}
-            onPaste={(e) => handlePaste(e, index)}
+            onCompositionStart={() => {
+              composing.current = true
+            }}
+            onCompositionEnd={() => {
+              composing.current = false
+            }}
+            onInput={(event) => handleInput(event, index)}
+            onKeyDown={(event) => handleKeyDown(event, index)}
+            onPaste={(event) => handlePaste(event, index)}
           />
         </Box>
       ))}

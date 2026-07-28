@@ -1,13 +1,21 @@
 import { render } from 'preact'
-import { LocationProvider, ErrorBoundary, Router, Route } from 'preact-iso'
+import {
+  LocationProvider,
+  lazy,
+  ErrorBoundary,
+  Router,
+  Route,
+} from 'preact-iso'
 import { StyledEngineProvider } from '@mui/material/styles'
 import CssBaseline from '@mui/material/CssBaseline'
 import { DialogsProvider } from '@toolpad/core/useDialogs'
 
 import AppTheme from './theme/AppTheme'
-import { Home, Admin } from './views'
 
 import './index.css'
+
+const Home = lazy(() => import('./views/Home').then((module) => module.Home))
+const Admin = lazy(() => import('./views/Admin').then((module) => module.Admin))
 
 function NotFound() {
   return <div>Not Found</div>

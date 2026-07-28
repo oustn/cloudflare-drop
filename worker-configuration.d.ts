@@ -6,8 +6,11 @@ interface Env {
   SHARE_PORT: string
   SHARE_MAX_SIZE_IN_MB: string
   SHARE_DURATION: string
+  STORAGE_DRIVER?: 'auto' | 'kv' | 'r2'
   ADMIN_TOKEN?: string
   DB: D1Database
   ASSETS: Fetcher
+  FILES?: R2Bucket
   UPLOAD_LIMIT?: RateLimit
+  LOOKUP_LIMIT?: RateLimit
 }

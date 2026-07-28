@@ -64,6 +64,13 @@
       "when": 1744447482410,
       "tag": "0008_magical_shockwave",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1785131759973,
+      "tag": "0009_fat_dexter_bennett",
+      "breakpoints": true
     }
   ]
 }

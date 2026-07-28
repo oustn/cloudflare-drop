@@ -1,6 +1,7 @@
 import { contentJson } from 'chanfana'
 import { z } from 'zod'
 import { Context } from 'hono'
+import { HTTPException } from 'hono/http-exception'
 
 import { Endpoint } from '../endpoint'
 
@@ -46,6 +47,19 @@ export class GetFileChunkInfo extends Endpoint {
   async handle(c: Context) {
     const data = await this.getValidatedData<typeof this.schema>()
     const payload = data.body
+    const expectedSize = payload.chunks.reduce((total, chunk) => {
+      if (
+        !Number.isInteger(chunk.chunkId) ||
+        chunk.chunkId < 0 ||
+        chunk.size < 1
+      ) {
+        throw new HTTPException(400, { message: '文件 Chunk 信息错误' })
+      }
+      return total + chunk.size
+    }, 0)
+    if (expectedSize !== payload.size) {
+      throw new HTTPException(400, { message: '文件 Chunk 大小错误' })
+    }
     const kv = this.getKV(c)
     const key = `${payload.uuid}_${payload.sha}`
     const record: ChunkInfo | null = await kv.get(key, 'json')
@@ -65,8 +79,6 @@ export class GetFileChunkInfo extends Endpoint {
         prefix: `${key}.`,
       })
     ).keys
-
-    console.log(list)
 
     const finished = list.map((d) => ({
       chunkId: Number.parseInt(d.name.split('.')[1]),

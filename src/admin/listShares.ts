@@ -13,7 +13,7 @@ export class ListShares extends Endpoint {
       query: z.object({
         size: z.number().optional(),
         page: z.number().optional(),
-        orderBy: z.string().optional(),
+        orderBy: z.enum(['size', 'due_date', 'created_at']).optional(),
         order: z.enum(['asc', 'desc']).optional(),
       }),
     },
@@ -31,7 +31,14 @@ export class ListShares extends Endpoint {
 
   async handle(c: Context) {
     const { query } = await this.getValidatedData<typeof this.schema>()
-    const { size: pageSize = 10, page = 0, order, orderBy } = query
+    const {
+      size: requestedSize = 10,
+      page: requestedPage = 0,
+      order,
+      orderBy,
+    } = query
+    const pageSize = Math.min(Math.max(requestedSize, 1), 100)
+    const page = Math.max(requestedPage, 0)
     const db = this.getDB(c)
 
     const recordQuery = db.select().from(files)

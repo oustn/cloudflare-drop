@@ -1,5 +1,6 @@
 import { Context } from 'hono'
 import { z } from 'zod'
+import { HTTPException } from 'hono/http-exception'
 
 import { Endpoint } from '../endpoint'
 
@@ -35,9 +36,19 @@ export class FileChunkCreate extends Endpoint {
     }
 
     const kv = this.getKV(c)
+    const manifestKey = `${uuid}_${sha}`
+    const manifest: ChunkInfo | null = await kv.get(manifestKey, 'json')
+    const expected = manifest?.chunks.find((item) => item.chunkId === chunkId)
+    const file = chunk as File
+    if (!expected || file.size !== expected.size) {
+      throw new HTTPException(400, { message: '文件 Chunk 大小错误' })
+    }
     const key = `${uuid}_${sha}.${chunkId}`
+    if (await kv.get(key, 'stream')) {
+      throw new HTTPException(409, { message: '文件 Chunk 已上传' })
+    }
 
-    await kv.put(key, await (chunk as File).arrayBuffer(), {
+    await kv.put(key, await file.arrayBuffer(), {
       expirationTtl: 5 * 60, // 5 分钟过期
     })
 

@@ -15,6 +15,8 @@ import Visibility from '@mui/icons-material/Visibility'
 import VisibilityOff from '@mui/icons-material/VisibilityOff'
 import OutlinedInput from '@mui/material/OutlinedInput'
 import FormHelperText from '@mui/material/FormHelperText'
+import LinearProgress from '@mui/material/LinearProgress'
+import { passwordStrength } from '../../../helpers'
 
 interface PasswordSwitchProps {
   value?: string
@@ -27,11 +29,15 @@ function PasswordDialog({
   open,
   onClose,
   payload,
-}: DialogProps<{ password: string; showClear: boolean }, string | null>) {
-  const { password, showClear = true } = payload
+}: DialogProps<
+  { password: string; showClear: boolean; showStrength: boolean },
+  string | null
+>) {
+  const { password, showClear = true, showStrength = false } = payload
   const [result, setResult] = useState(password)
   const [show, setShow] = useState(false)
   const el = useRef<HTMLDivElement>(null)
+  const strength = showStrength && result ? passwordStrength(result) : null
 
   const handleClickShowPassword = () => setShow((show) => !show)
 
@@ -89,6 +95,21 @@ function PasswordDialog({
           value={result}
           onChange={(event) => setResult(event.currentTarget.value)}
         />
+        {strength && (
+          <FormHelperText component="div" sx={{ mt: 1.5 }}>
+            <div className="flex flex-col gap-1 sm:flex-row sm:justify-between">
+              <span>密码强度：{strength.label}</span>
+              <span>{strength.suggestion}</span>
+            </div>
+            <LinearProgress
+              aria-label={`密码强度：${strength.label}`}
+              color={strength.color}
+              sx={{ mt: 0.5 }}
+              value={strength.value}
+              variant="determinate"
+            />
+          </FormHelperText>
+        )}
         <FormHelperText sx={{ mt: 2 }}>
           采用 AES-GCM 端对端加密，服务器不保存密码，密码丢失数据将无法恢复
         </FormHelperText>
@@ -131,6 +152,7 @@ export function PasswordSwitch(props: PasswordSwitchProps) {
     const result = await dialogs.open(PasswordDialog, {
       password,
       showClear: !actionable,
+      showStrength: !actionable,
     })
     updatePassword(result || '')
     if (onChange) {

@@ -19,7 +19,9 @@ export const files = sqliteTable('files', {
   size: integer('size').default(0),
   is_ephemeral: integer('is_ephemeral', { mode: 'boolean' }).default(false), // 阅后即焚
   is_encrypted: integer('is_encrypted', { mode: 'boolean' }).default(false),
+  storage_provider: text('storage_provider').notNull().default('kv'),
   due_date: integer('due_date', { mode: 'timestamp' }).notNull(), // 过期时间
+  claimed_at: integer('claimed_at', { mode: 'timestamp' }),
   created_at: integer('created_at', { mode: 'timestamp' }), // 创建时间
 })
 

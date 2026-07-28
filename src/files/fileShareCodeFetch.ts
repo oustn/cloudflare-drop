@@ -4,10 +4,9 @@ import { z } from 'zod'
 import { DrizzleD1Database } from 'drizzle-orm/d1'
 import { eq } from 'drizzle-orm'
 import dayjs from 'dayjs'
-import { createId } from '@paralleldrive/cuid2'
-
 import { files, fileSelectSchema } from '../../data/schemas'
 import { MAX_DURATION } from '../common'
+import { lookupShare, ShareError } from '../shares'
 
 export async function getFile(db: DrizzleD1Database, code: string) {
   const [file] = await db
@@ -22,6 +21,7 @@ export async function getFile(db: DrizzleD1Database, code: string) {
       size: files.size,
       is_ephemeral: files.is_ephemeral,
       is_encrypted: files.is_encrypted,
+      storage_provider: files.storage_provider,
     })
     .from(files)
     .where(eq(files.code, code.toUpperCase()))
@@ -62,41 +62,24 @@ export class FileShareCodeFetch extends Endpoint {
     const data = await this.getValidatedData<typeof this.schema>()
     const code = data.params.code.toUpperCase()
 
-    const db = this.getDB(c)
+    try {
+      const { file, token } = await lookupShare(
+        this.getDB(c),
+        this.getKV(c),
+        code,
+      )
+      const day = dayjs(file.due_date)
+      const { objectId, ...rest } = file
 
-    const file = await getFile(db, code)
-
-    if (!file) {
-      return this.error('分享码无效')
+      return this.success({
+        ...rest,
+        token,
+        due_date: day.isSame(MAX_DURATION) ? null : file.due_date,
+      })
+    } catch (error) {
+      return this.error(
+        error instanceof ShareError ? error.message : '分享读取失败',
+      )
     }
-
-    const day = dayjs(file.due_date)
-    if (day.isBefore(dayjs())) {
-      return this.error('分享已过期')
-    }
-
-    const { objectId, ...rest } = file
-
-    // 阅后即焚
-    if (rest.is_ephemeral) {
-      await db
-        .update(files)
-        .set({
-          due_date: new Date(0),
-        })
-        .where(eq(files.id, rest.id))
-    }
-
-    const token = createId()
-    const kv = this.getKV(c)
-    await kv.put(token, token, {
-      expirationTtl: 60 * 5,
-    })
-
-    return this.success({
-      ...rest,
-      token,
-      due_date: day.isSame(MAX_DURATION) ? null : file.due_date,
-    })
   }
 }

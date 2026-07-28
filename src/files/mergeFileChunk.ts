@@ -53,7 +53,7 @@ export class MergeFileChunk extends Endpoint {
     ;(async () => {
       for (let i = 0; i < record.chunks.length; i++) {
         const chunk = await kv.get(`${key}.${i}`, 'arrayBuffer')
-        if (!chunk) {
+        if (!chunk || chunk.byteLength !== record.chunks[i].size) {
           await writer.close()
           throw new Error('文件 Chunk 不完整')
         }
@@ -63,7 +63,9 @@ export class MergeFileChunk extends Endpoint {
     })().then()
 
     const id = createId()
-    await kv.put(id, readable)
+    await kv.put(id, readable, {
+      metadata: { size: record.size, hash: record.sha },
+    })
 
     return c.json({
       data: id,

@@ -49,6 +49,11 @@ const VisuallyHiddenInput = styled('input')({
 const envMax = Number.parseInt(import.meta.env.SHARE_MAX_SIZE_IN_MB, 10)
 const MAX_SIZE = Number.isNaN(envMax) || envMax <= 0 ? 10 : envMax
 
+function blurActiveElement() {
+  const activeElement = document.activeElement
+  if (activeElement instanceof HTMLElement) activeElement.blur()
+}
+
 export function AppMain(props: LayoutProps) {
   const setBackdropOpen = props.setBackdropOpen!
   const message = props.message!
@@ -64,6 +69,7 @@ export function AppMain(props: LayoutProps) {
   const [password, updatePassword] = useState('')
 
   const toggleDrawer = (newOpen: boolean) => () => {
+    if (newOpen) blurActiveElement()
     updateDrawerOpened(newOpen)
   }
 
@@ -121,6 +127,7 @@ export function AppMain(props: LayoutProps) {
         data.data.code,
         data.data.type !== 'plain/string',
       )
+      blurActiveElement()
       await dialogs
         .open(FileDialog, { ...data.data, message })
         .then(reset.current)
@@ -176,6 +183,7 @@ export function AppMain(props: LayoutProps) {
         return
       }
       historyApi.insertShared(uploaded.data.code, tab === 'file')
+      blurActiveElement()
       await dialogs
         .open(ShareDialog, { ...uploaded.data, message })
         .then(reset.current)

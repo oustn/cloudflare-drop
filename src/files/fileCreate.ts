@@ -1,27 +1,14 @@
 import { Context } from 'hono'
 import mine from 'mime'
-import { createId, init } from '@paralleldrive/cuid2'
+import { createId } from '@paralleldrive/cuid2'
 import { z } from 'zod'
-import dayjs, { ManipulateType } from 'dayjs'
-import { inArray } from 'drizzle-orm'
+import dayjs from 'dayjs'
 
 import { Endpoint } from '../endpoint'
 import { files, InsertFileType } from '../../data/schemas'
-import { MAX_DURATION } from '../common'
-
-const duration = ['day', 'week', 'month', 'year', 'hour', 'minute']
-
-function resolveDuration(str: string): [number, ManipulateType] {
-  const match = new RegExp(`^(\\d+)(${duration.join('|')})$`).exec(str)
-  if (!match) {
-    return [1, 'hour']
-  }
-  return [Number.parseInt(match[1], 10), match[2] as ManipulateType]
-}
-
-function numberRandom() {
-  return Math.floor(100000 + Math.random() * 900000).toString()
-}
+import { resolveShareDuration } from '../common'
+import { selectStorage } from '../storage'
+import { createNumericShareCode, isUniqueCodeConstraint } from '../shareCode'
 
 async function sha256(data: ArrayBuffer) {
   const digest = await crypto.subtle.digest(
@@ -32,6 +19,57 @@ async function sha256(data: ArrayBuffer) {
   )
   const array = Array.from(new Uint8Array(digest))
   return array.map((b) => b.toString(16).padStart(2, '0')).join('')
+}
+
+interface TemporaryUploadMetadata {
+  size: number
+  hash: string
+}
+
+function isTemporaryUploadMetadata(
+  metadata: unknown,
+): metadata is TemporaryUploadMetadata {
+  return (
+    typeof metadata === 'object' &&
+    metadata !== null &&
+    typeof (metadata as TemporaryUploadMetadata).size === 'number' &&
+    typeof (metadata as TemporaryUploadMetadata).hash === 'string'
+  )
+}
+
+function combineStreams(
+  kv: KVNamespace,
+  objectIds: Array<{ objectId: string }>,
+): ReadableStream<Uint8Array> {
+  let index = 0
+  let reader: ReadableStreamDefaultReader<Uint8Array> | null = null
+  return new ReadableStream({
+    async pull(controller) {
+      try {
+        while (true) {
+          if (!reader) {
+            const stream = await kv.get(objectIds[index]?.objectId, 'stream')
+            if (!stream) throw new Error('分片上传的文件不存在')
+            reader = stream.getReader()
+          }
+          const chunk = await reader.read()
+          if (!chunk.done) {
+            controller.enqueue(chunk.value)
+            return
+          }
+          reader.releaseLock()
+          reader = null
+          index += 1
+          if (index === objectIds.length) {
+            controller.close()
+            return
+          }
+        }
+      } catch (error) {
+        controller.error(error)
+      }
+    },
+  })
 }
 
 export class FileCreate extends Endpoint {
@@ -126,15 +164,49 @@ export class FileCreate extends Endpoint {
     const envMax = Number.parseInt(c.env.SHARE_MAX_SIZE_IN_MB, 10)
     const max = Number.isNaN(envMax) || envMax <= 0 ? 10 : envMax
 
+    const kv = this.getKV(c)
+    if (!data && typeof objectId === 'string') {
+      const { metadata } =
+        await kv.getWithMetadata<TemporaryUploadMetadata>(objectId)
+      if (!isTemporaryUploadMetadata(metadata)) {
+        return this.error('分片上传的文件信息不存在')
+      }
+      size = metadata.size
+      hash = metadata.hash
+    } else if (!data && Array.isArray(objectId)) {
+      const metadata = await Promise.all(
+        objectId.map(async ({ objectId }) => {
+          const result =
+            await kv.getWithMetadata<TemporaryUploadMetadata>(objectId)
+          return result.metadata
+        }),
+      )
+      if (!metadata.every(isTemporaryUploadMetadata)) {
+        return this.error('分片上传的文件信息不存在')
+      }
+      size = metadata.reduce((total, item) => total + item.size, 0)
+    }
+
     if (size > max * 1000 * 1000) {
       return this.error(`文件大于 ${max}M`)
     }
 
-    const kv = this.getKV(c)
-    const key = objectId && !Array.isArray(objectId) ? objectId : createId()
+    let shareDuration: { permanent: boolean; dueDate: Date }
+    try {
+      shareDuration = resolveShareDuration(
+        duration || c.env.SHARE_DURATION || '1hour',
+      )
+    } catch (error) {
+      return this.error(
+        error instanceof Error ? error.message : '分享有效期错误',
+      )
+    }
+
+    const storage = selectStorage(c.env)
+    const key = createId()
     // 直接上传
     if (data && data.byteLength) {
-      await kv.put(key, data)
+      await storage.put(key, data)
       hash = await sha256(data)
       // 单个
     } else if (typeof objectId === 'string') {
@@ -142,72 +214,66 @@ export class FileCreate extends Endpoint {
       if (!cacheFile) {
         return this.error('分片上传的文件不存在')
       }
+      await storage.put(key, cacheFile)
+      await kv.delete(objectId)
       // 分片存储
     } else if (Array.isArray(objectId) && objectId.length) {
-      await kv.put(key, 'chunks', {
-        metadata: objectId,
-      })
+      await storage.put(key, combineStreams(kv, objectId))
+      await Promise.all(objectId.map((chunk) => kv.delete(chunk.objectId)))
     }
 
     const db = this.getDB(c)
 
-    const shareCodeCreate = init({
-      length: 6,
-    })
-
-    const shareCodes: Array<string> = [
-      ...new Array(20).fill(1).map(() => numberRandom()),
-      ...new Array(10).fill(1).map(() => shareCodeCreate().toUpperCase()),
-    ]
-
-    const records = (
-      await db
-        .select({
-          code: files.code,
-        })
-        .from(files)
-        .where(inArray(files.code, shareCodes))
-    ).map((d) => d.code)
-
-    const shareCode = shareCodes.find((d) => !records.includes(d))
-
-    if (!shareCode) {
-      return this.error('分享码生成失败，请重试')
-    }
-
-    const [due, dueType] = resolveDuration(duration || c.env.SHARE_DURATION)
-    const forever = due === 999 && dueType === 'year'
-    const dueDate = forever
-      ? MAX_DURATION.toDate()
-      : dayjs().add(due, dueType).toDate()
-
-    const insert: InsertFileType = {
+    const insert: Omit<InsertFileType, 'code'> = {
       objectId: key,
       filename,
       type,
       hash,
-      code: shareCode,
-      due_date: dueDate,
+      due_date: shareDuration.dueDate,
       size,
       is_ephemeral: isEphemeral,
       is_encrypted: isEncrypted,
+      storage_provider: storage.provider,
       created_at: dayjs().toDate(),
     }
 
-    const [record] = await db.insert(files).values(insert).returning({
-      hash: files.hash,
-      code: files.code,
-      due_date: files.due_date,
-      is_ephemeral: files.is_ephemeral,
-      is_encrypted: files.is_encrypted,
-    })
+    let record:
+      | {
+          hash: string
+          code: string
+          due_date: Date
+          is_ephemeral: boolean | null
+          is_encrypted: boolean | null
+        }
+      | undefined
+    for (let attempt = 0; attempt < 10; attempt += 1) {
+      try {
+        ;[record] = await db
+          .insert(files)
+          .values({ ...insert, code: createNumericShareCode() })
+          .returning({
+            hash: files.hash,
+            code: files.code,
+            due_date: files.due_date,
+            is_ephemeral: files.is_ephemeral,
+            is_encrypted: files.is_encrypted,
+          })
+        break
+      } catch (error) {
+        if (!isUniqueCodeConstraint(error)) throw error
+      }
+    }
+    if (!record) {
+      await storage.delete(key)
+      return this.error('分享码生成失败，请重试')
+    }
 
     return {
       message: 'ok',
       result: true,
       data: {
         ...record,
-        due_date: forever ? null : record.due_date,
+        due_date: shareDuration.permanent ? null : record.due_date,
       },
     }
   }

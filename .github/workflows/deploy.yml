@@ -8,7 +8,22 @@ on:
   repository_dispatch:
 
 jobs:
+  verify:
+    runs-on: ubuntu-latest
+    name: Verify
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm audit --prod --audit-level=high
+      - run: pnpm test
+      - run: pnpm build:web
   deploy:
+    needs: verify
     runs-on: ubuntu-latest
     name: Deploy
     steps:
@@ -21,11 +36,14 @@ jobs:
           D1_NAME: ${{ secrets.D1_NAME }}
           D1_ID: ${{ secrets.D1_ID }}
           KV_ID: ${{ secrets.KV_ID }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
           CUSTOM_DOMAIN: ${{ secrets.CUSTOM_DOMAIN }}
           ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
           SHARE_MAX_SIZE_IN_MB: ${{ vars.SHARE_MAX_SIZE_IN_MB }}
           RATE_LIMIT: ${{ vars.RATE_LIMIT }}
+          LOOKUP_RATE_LIMIT: ${{ vars.LOOKUP_RATE_LIMIT }}
           SHARE_DURATION: ${{ vars.SHARE_DURATION }}
+          STORAGE_DRIVER: ${{ vars.STORAGE_DRIVER }}
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

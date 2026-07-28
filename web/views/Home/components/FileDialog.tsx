@@ -12,7 +12,12 @@ import zh from 'dayjs/locale/zh-cn'
 import { useDialogs } from '@toolpad/core/useDialogs'
 import Backdrop from '@mui/material/Backdrop'
 
-import { fetchFile, fetchPlainText } from '../../../api'
+import {
+  decryptPlainText,
+  fetchFile,
+  fetchPlainText,
+  fetchSharedBlob,
+} from '../../../api'
 import { copyToClipboard } from '../../../common.ts'
 import { BasicDialog } from './BasicDialog.tsx'
 import { PasswordSwitch } from './PasswordSwitch.tsx'
@@ -46,6 +51,7 @@ export function FileDialog({
   const [downloading, updateDownloading] = useState(false)
   const [progress, updateProgress] = useState(0)
   const [file, setFile] = useState<Blob | null>(null)
+  const [encryptedText, setEncryptedText] = useState<Blob | null>(null)
 
   const showPassword = !password && payload.is_encrypted
 
@@ -89,7 +95,10 @@ export function FileDialog({
       return
     }
     try {
-      const data = await fetchPlainText(payload.id, password, payload.token)
+      const blob =
+        encryptedText ?? (await fetchSharedBlob(payload.id, payload.token))
+      setEncryptedText(blob)
+      const data = await decryptPlainText(password, blob)
       updateText(data)
       updatePassword(password)
     } catch (_e) {
