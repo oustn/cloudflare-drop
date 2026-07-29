@@ -1,4 +1,5 @@
 import { useState, useRef } from 'preact/hooks'
+import { observer } from 'mobx-react-lite'
 import { useDialogs } from '@toolpad/core/useDialogs'
 import Container from '@mui/material/Container'
 import Paper from '@mui/material/Paper'
@@ -33,6 +34,8 @@ import {
 } from './components'
 import { resolveFileByCode, uploadFile } from '../../api'
 import { Layout, LayoutProps } from '../../components'
+import { mapError } from '../../helpers'
+import { useTranslation } from '../../i18n'
 
 const VisuallyHiddenInput = styled('input')({
   clip: 'rect(0 0 0 0)',
@@ -54,9 +57,10 @@ function blurActiveElement() {
   if (activeElement instanceof HTMLElement) activeElement.blur()
 }
 
-export function AppMain(props: LayoutProps) {
+export const AppMain = observer(function AppMain(props: LayoutProps) {
   const setBackdropOpen = props.setBackdropOpen!
   const message = props.message!
+  const i18n = useTranslation()
   const [tab, setTab] = useState('text')
   const dialogs = useDialogs()
   const [duration, updateDuration] = useState('')
@@ -122,7 +126,7 @@ export function AppMain(props: LayoutProps) {
       const data = await resolveFileByCode(code)
       handleBackdropClose()
       if (!data.result || !data.data) {
-        message.error(data.message)
+        message.error(mapError(data.message))
         return
       }
       // 打开弹窗
@@ -135,8 +139,7 @@ export function AppMain(props: LayoutProps) {
         .open(FileDialog, { ...data.data, message })
         .then(reset.current)
     } catch (e) {
-      const data = (e as { message: string }).message || JSON.stringify(e)
-      message.error(data)
+      message.error(mapError(e))
       handleBackdropClose()
     } finally {
       resolvingCode.current = null
@@ -153,7 +156,7 @@ export function AppMain(props: LayoutProps) {
     const target: HTMLInputElement = e.target as HTMLInputElement
     const file = target?.files?.[0] ?? null
     if (file && file.size > MAX_SIZE * 1000 * 1000) {
-      message.error(`文件大于 ${MAX_SIZE}M`)
+      message.error(i18n.t('home.fileTooLarge', { size: MAX_SIZE }))
       ;(e.target as HTMLInputElement).value = ''
       return
     }
@@ -184,7 +187,7 @@ export function AppMain(props: LayoutProps) {
       )
       handleProgressClose()
       if (!uploaded.result || !uploaded.data) {
-        message.error(uploaded.message)
+        message.error(mapError(uploaded.message))
         return
       }
       historyApi.insertShared(uploaded.data.code, tab === 'file')
@@ -193,8 +196,7 @@ export function AppMain(props: LayoutProps) {
         .open(ShareDialog, { ...uploaded.data, message })
         .then(reset.current)
     } catch (e) {
-      const data = (e as { message: string }).message || JSON.stringify(e)
-      message.error(data)
+      message.error(mapError(e))
       handleProgressClose()
     }
   }
@@ -223,7 +225,7 @@ export function AppMain(props: LayoutProps) {
           >
             <InputLabel>
               <Typography variant="h4" align="left">
-                分享码：
+                {i18n.t('home.shareCode')}
               </Typography>
             </InputLabel>
             <Code
@@ -246,8 +248,8 @@ export function AppMain(props: LayoutProps) {
                   onChange={handleChangeTab}
                   aria-label="lab API tabs example"
                 >
-                  <Tab label="文本分享" value="text" />
-                  <Tab label="文件分享" value="file" />
+                  <Tab label={i18n.t('home.textShare')} value="text" />
+                  <Tab label={i18n.t('home.fileShare')} value="file" />
                 </TabList>
               </Box>
               <TabPanel value="text" sx={{ height: 230, pl: 0, pr: 0 }}>
@@ -269,7 +271,7 @@ export function AppMain(props: LayoutProps) {
                     tabIndex={-1}
                     startIcon={<CloudUploadIcon />}
                   >
-                    选择文件
+                    {i18n.t('home.selectFile')}
                     <VisuallyHiddenInput
                       type="file"
                       onChange={handleFileChange}
@@ -298,7 +300,7 @@ export function AppMain(props: LayoutProps) {
                   onChange={handleChangeEphemeral}
                 />
               }
-              label="阅后即焚"
+              label={i18n.t('home.burnAfterRead')}
             />
           </Box>
           <Box className="flex flex-row-reverse justify-between">
@@ -316,11 +318,11 @@ export function AppMain(props: LayoutProps) {
                 }}
                 onClick={handleShare}
               >
-                分享
+                {i18n.t('common.share')}
               </Button>
             </div>
             <Button variant="text" color="primary" onClick={toggleDrawer(true)}>
-              历史记录
+              {i18n.t('home.history')}
               <ReceiptLongIcon fontSize="small" />
             </Button>
           </Box>
@@ -338,7 +340,7 @@ export function AppMain(props: LayoutProps) {
       <Progress open={progress !== null} value={progress ?? 0} />
     </>
   )
-}
+})
 export function Home() {
   return (
     <Layout>

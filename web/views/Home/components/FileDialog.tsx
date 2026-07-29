@@ -8,9 +8,9 @@ import Typography from '@mui/material/Typography'
 import TextField from '@mui/material/TextField'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
-import zh from 'dayjs/locale/zh-cn'
 import { useDialogs } from '@toolpad/core/useDialogs'
 import Backdrop from '@mui/material/Backdrop'
+import { observer } from 'mobx-react-lite'
 
 import {
   decryptPlainText,
@@ -19,15 +19,16 @@ import {
   fetchSharedBlob,
 } from '../../../api'
 import { copyToClipboard } from '../../../common.ts'
+import { mapError } from '../../../helpers'
 import { BasicDialog } from './BasicDialog.tsx'
 import { PasswordSwitch } from './PasswordSwitch.tsx'
 import LockClose from '@mui/icons-material/Lock'
 import LockOpen from '@mui/icons-material/LockOpen'
+import { useTranslation } from '../../../i18n'
 
 dayjs.extend(relativeTime)
-dayjs.locale(zh)
 
-export function FileDialog({
+export const FileDialog = observer(function FileDialog({
   open,
   onClose,
   payload,
@@ -40,10 +41,11 @@ export function FileDialog({
     token?: string
   }
 >) {
+  const i18n = useTranslation()
   const dialogs = useDialogs()
   const isText = payload.type === 'plain/string'
   const [text, updateText] = useState(
-    payload.is_encrypted ? '分享已加密，请使用密码解密' : '',
+    payload.is_encrypted ? i18n.t('fileDialog.encryptedHint') : '',
   )
   const [password, updatePassword] = useState('')
   const [backdrop] = useState(payload.is_encrypted ?? false)
@@ -58,10 +60,10 @@ export function FileDialog({
   const handleCopy = (str: string) => {
     copyToClipboard(str)
       .then(() => {
-        payload.message.success('复制成功')
+        payload.message.success(i18n.t('common.copySuccess'))
       })
       .catch(() => {
-        payload.message.success('复制失败')
+        payload.message.error(i18n.t('common.copyFailed'))
       })
   }
 
@@ -69,8 +71,12 @@ export function FileDialog({
     if (isText) {
       if (showPassword) return
       ;(async () => {
-        const data = await fetchPlainText(payload.id, password, payload.token)
-        updateText(data)
+        try {
+          const data = await fetchPlainText(payload.id, password, payload.token)
+          updateText(data)
+        } catch (e) {
+          payload.message.error(mapError(e))
+        }
       })()
     }
   }, [])
@@ -79,11 +85,14 @@ export function FileDialog({
     if (!payload.is_ephemeral) {
       return onClose()
     }
-    const confirmed = await dialogs.confirm('关闭后无法再次查看，确认关闭？', {
-      okText: '确认',
-      cancelText: '取消',
-      title: '阅后即焚',
-    })
+    const confirmed = await dialogs.confirm(
+      i18n.t('fileDialog.burnAfterReadConfirm'),
+      {
+        okText: i18n.t('common.confirm'),
+        cancelText: i18n.t('common.cancel'),
+        title: i18n.t('fileDialog.burnAfterReadTitle'),
+      },
+    )
     if (confirmed) {
       return onClose()
     }
@@ -102,7 +111,7 @@ export function FileDialog({
       updateText(data)
       updatePassword(password)
     } catch (_e) {
-      payload.message.error('解密失败')
+      payload.message.error(i18n.t('fileDialog.decryptFailed'))
     }
   }
 
@@ -130,11 +139,11 @@ export function FileDialog({
       if (!e) {
         updatePassword(password)
       } else {
-        payload.message.error('解密失败')
+        payload.message.error(i18n.t('fileDialog.decryptFailed'))
       }
       setFile(originFile)
-    } catch (_e) {
-      payload.message.error('解密失败')
+    } catch (e) {
+      payload.message.error(mapError(e))
     }
     updateDownloading(false)
     updateProgress(0)
@@ -144,7 +153,9 @@ export function FileDialog({
     <BasicDialog
       open={open}
       onClose={handleClose}
-      title={isText ? '文本分享' : '文件分享'}
+      title={
+        isText ? i18n.t('fileDialog.textTitle') : i18n.t('fileDialog.fileTitle')
+      }
     >
       <Box>
         {isText && (
@@ -195,7 +206,7 @@ export function FileDialog({
                 },
               })}
             >
-              复制
+              {i18n.t('common.copy')}
             </Button>
           </Box>
         )}
@@ -225,7 +236,7 @@ export function FileDialog({
                   },
                 })}
               >
-                下载
+                {i18n.t('common.download')}
               </Button>
             )}
             {payload.is_encrypted && (
@@ -237,7 +248,9 @@ export function FileDialog({
                 {(openPassword) => (
                   <Button
                     loading={downloading}
-                    loadingIndicator={`下载中(${((progress / payload.size) * 100).toFixed(1)}%)...`}
+                    loadingIndicator={i18n.t('common.downloading', {
+                      progress: ((progress / payload.size) * 100).toFixed(1),
+                    })}
                     startIcon={!password ? <LockClose /> : <LockOpen />}
                     variant="contained"
                     color={!password ? 'warning' : 'primary'}
@@ -258,7 +271,7 @@ export function FileDialog({
                       handlePasswordDownload(password)
                     }}
                   >
-                    下载
+                    {i18n.t('common.download')}
                   </Button>
                 )}
               </PasswordSwitch>
@@ -269,9 +282,9 @@ export function FileDialog({
           {!payload.is_encrypted && (
             <>
               <Typography variant="body2" color="textDisabled">
-                原始分享 SHA256 Hash 值{' '}
+                {i18n.t('common.originalHashLabel')}{' '}
                 <a target="_blank" href="https://www.lzltool.com/data-hash">
-                  (校验工具)
+                  ({i18n.t('common.verifyTool')})
                 </a>
                 {'：'}
               </Typography>
@@ -288,7 +301,9 @@ export function FileDialog({
             </>
           )}
           <Typography className="mt-1" variant="body2" color="textDisabled">
-            {payload.due_date ? '预计过期于：' : '永久有效'}
+            {payload.due_date
+              ? i18n.t('common.expiryEstimate')
+              : i18n.t('common.permanent')}
           </Typography>
           {payload.due_date && (
             <Typography className="mt-1" variant="body2">
@@ -299,4 +314,4 @@ export function FileDialog({
       </Box>
     </BasicDialog>
   )
-}
+})

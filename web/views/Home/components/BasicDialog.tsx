@@ -8,6 +8,8 @@ import Slide from '@mui/material/Slide'
 import { TransitionProps } from '@mui/material/transitions'
 import IconButton from '@mui/material/IconButton'
 import CloseIcon from '@mui/icons-material/Close'
+import { observer } from 'mobx-react-lite'
+import { useTranslation } from '../../../i18n'
 
 const Transition = forwardRef(function Transition(
   props: TransitionProps & {
@@ -24,12 +26,13 @@ export type BasicDialogProps = Omit<DialogProps, 'payload'> & {
   children: ComponentChildren
 }
 
-export function BasicDialog({
+export const BasicDialog = observer(function BasicDialog({
   open,
   onClose,
   title,
   children,
 }: BasicDialogProps) {
+  const i18n = useTranslation()
   const handleClose = async (_e: unknown, reason?: string) => {
     if (reason === 'backdropClick' || reason === 'escapeKeyDown') {
       return
@@ -47,7 +50,7 @@ export function BasicDialog({
     >
       <DialogTitle>{title}</DialogTitle>
       <IconButton
-        aria-label="close"
+        aria-label={i18n.t('common.close')}
         onClick={handleClose}
         sx={(theme) => ({
           position: 'absolute',
@@ -69,4 +72,4 @@ export function BasicDialog({
       </DialogContent>
     </Dialog>
   )
-}
+})

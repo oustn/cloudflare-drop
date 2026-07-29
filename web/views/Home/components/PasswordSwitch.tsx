@@ -16,7 +16,9 @@ import VisibilityOff from '@mui/icons-material/VisibilityOff'
 import OutlinedInput from '@mui/material/OutlinedInput'
 import FormHelperText from '@mui/material/FormHelperText'
 import LinearProgress from '@mui/material/LinearProgress'
+import { observer } from 'mobx-react-lite'
 import { passwordStrength } from '../../../helpers'
+import { useTranslation } from '../../../i18n'
 
 interface PasswordSwitchProps {
   value?: string
@@ -25,7 +27,19 @@ interface PasswordSwitchProps {
   children?: (open: { (): Promise<void> }) => ComponentChildren
 }
 
-function PasswordDialog({
+function strengthLocaleKey(label: '弱' | '中' | '强') {
+  if (label === '强') return 'strong'
+  if (label === '中') return 'medium'
+  return 'weak'
+}
+
+function strengthSuggestionLocaleKey(label: '弱' | '中' | '强') {
+  if (label === '强') return 'strongSuggestion'
+  if (label === '中') return 'mediumSuggestion'
+  return 'weakSuggestion'
+}
+
+const PasswordDialog = observer(function PasswordDialog({
   open,
   onClose,
   payload,
@@ -33,11 +47,21 @@ function PasswordDialog({
   { password: string; showClear: boolean; showStrength: boolean },
   string | null
 >) {
+  const i18n = useTranslation()
   const { password, showClear = true, showStrength = false } = payload
   const [result, setResult] = useState(password)
   const [show, setShow] = useState(false)
   const el = useRef<HTMLDivElement>(null)
   const strength = showStrength ? passwordStrength(result) : null
+  const strengthLabel = strength
+    ? i18n.t(`password.${strengthLocaleKey(strength.label)}`)
+    : ''
+  const strengthSuggestion = strength
+    ? i18n.t(`password.${strengthSuggestionLocaleKey(strength.label)}`)
+    : ''
+  const strengthText = strength
+    ? i18n.t('password.strengthDisplay', { label: strengthLabel })
+    : ''
 
   const handleClickShowPassword = () => setShow((show) => !show)
 
@@ -63,12 +87,12 @@ function PasswordDialog({
 
   return (
     <Dialog open={open} onClose={() => onClose(null)}>
-      <DialogTitle>分享密码</DialogTitle>
+      <DialogTitle>{i18n.t('password.sharePassword')}</DialogTitle>
       <DialogContent>
         <div className="px-0.5 pt-1.5">
           <OutlinedInput
             ref={el}
-            placeholder="请输入分享密码"
+            placeholder={i18n.t('password.placeholder')}
             type={show ? 'text' : 'password'}
             name="share-password"
             autoComplete="new-password"
@@ -104,11 +128,11 @@ function PasswordDialog({
         {strength && (
           <FormHelperText component="div" sx={{ mt: 1.5 }}>
             <div className="flex flex-col gap-1 sm:flex-row sm:justify-between">
-              <span>密码强度：{strength.label}</span>
-              <span>{strength.suggestion}</span>
+              <span>{strengthText}</span>
+              <span>{strengthSuggestion}</span>
             </div>
             <LinearProgress
-              aria-label={`密码强度：${strength.label}`}
+              aria-label={strengthText}
               color={strength.color}
               sx={{ mt: 0.5 }}
               value={strength.value}
@@ -117,7 +141,7 @@ function PasswordDialog({
           </FormHelperText>
         )}
         <FormHelperText sx={{ mt: 2 }}>
-          采用 AES-GCM 端对端加密，服务器不保存密码，密码丢失数据将无法恢复
+          {i18n.t('password.encryptedNotice')}
         </FormHelperText>
       </DialogContent>
       <DialogActions
@@ -133,7 +157,7 @@ function PasswordDialog({
             color="error"
             onClick={() => onClose('')}
           >
-            清空密码
+            {i18n.t('password.clearPassword')}
           </Button>
         )}
         <Button
@@ -141,14 +165,16 @@ function PasswordDialog({
           variant="contained"
           onClick={() => onClose(result)}
         >
-          确认
+          {i18n.t('common.confirm')}
         </Button>
       </DialogActions>
     </Dialog>
   )
-}
+})
 
-export function PasswordSwitch(props: PasswordSwitchProps) {
+export const PasswordSwitch = observer(function PasswordSwitch(
+  props: PasswordSwitchProps,
+) {
   const dialogs = useDialogs()
 
   const { value, onChange, actionable } = props
@@ -179,4 +205,4 @@ export function PasswordSwitch(props: PasswordSwitchProps) {
       )}
     </IconButton>
   )
-}
+})

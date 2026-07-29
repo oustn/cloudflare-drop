@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'preact/hooks'
+import { observer } from 'mobx-react-lite'
 import TextField from '@mui/material/TextField'
 import Box from '@mui/material/Box'
 
 import { applyDigits, digitsOnly } from './codeInput'
+import { useTranslation } from '../../../i18n'
 
 interface CodeProps {
   length: number
@@ -19,7 +21,13 @@ function toValues(value: string | undefined, length: number, disabled = false) {
   return [...code, ...new Array(Math.max(length - code.length, 0)).fill('')]
 }
 
-export function Code({ length, value, onChange, disabled = false }: CodeProps) {
+export const Code = observer(function Code({
+  length,
+  value,
+  onChange,
+  disabled = false,
+}: CodeProps) {
+  const i18n = useTranslation()
   const [codes, updateCodes] = useState(() => toValues(value, length, disabled))
   const inputs = useRef<Array<HTMLInputElement | null>>([])
   const composing = useRef(false)
@@ -117,7 +125,9 @@ export function Code({ length, value, onChange, disabled = false }: CodeProps) {
             }}
             slotProps={{
               htmlInput: {
-                'aria-label': `取件码第 ${index + 1} 位`,
+                'aria-label': i18n.t('common.codeDigit', {
+                  index: index + 1,
+                }),
                 'data-bwignore': 'off',
                 autoComplete: index === 0 ? 'one-time-code' : 'off',
                 inputMode: 'numeric',
@@ -139,4 +149,4 @@ export function Code({ length, value, onChange, disabled = false }: CodeProps) {
       ))}
     </Box>
   )
-}
+})

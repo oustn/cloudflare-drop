@@ -9,6 +9,7 @@ import CircularProgress from '@mui/material/CircularProgress'
 import IconButton from '@mui/material/IconButton'
 
 import { Message, useMessage, Github } from './'
+import { LanguageSwitch } from '../i18n'
 
 export interface LayoutProps {
   children?: ComponentChildren
@@ -43,31 +44,43 @@ export function Layout({ children }: LayoutProps) {
         class="flex flex-col mr-auto ml-auto"
         style="max-height: calc(100vh - 32px)"
       >
-        <Box className="flex justify-between items-center" sx={{ p: 0 }}>
-          <Link href="/" className="flex flex-row no-underline">
-            <img src="/logo.png" alt="brand" height="80" />
+        <Box className="flex justify-between items-center gap-3" sx={{ p: 0 }}>
+          <Link
+            href="/"
+            className="flex flex-row items-center gap-2 no-underline"
+          >
+            <Box
+              component="img"
+              className="block"
+              src="/logo.png"
+              alt="brand"
+              sx={{
+                height: '80px',
+                position: 'relative',
+                top: '10px',
+                width: 'auto',
+              }}
+            />
             <Typography
               variant="h4"
               color="primary"
               sx={{
                 fontFamily: 'DingDing',
+                lineHeight: 1,
               }}
             >
-              <span class="relative" style="top: 14px">
-                Cloudflare Drop
-              </span>
+              Cloudflare Drop
             </Typography>
           </Link>
-          <IconButton
-            sx={{
-              position: 'relative',
-              top: -10,
-            }}
-            href="https://github.com/oustn/cloudflare-drop"
-            target="_blank"
-          >
-            <Github />
-          </IconButton>
+          <Box className="flex items-center gap-2">
+            <LanguageSwitch />
+            <IconButton
+              href="https://github.com/oustn/cloudflare-drop"
+              target="_blank"
+            >
+              <Github />
+            </IconButton>
+          </Box>
         </Box>
         {injectedChildren}
       </div>

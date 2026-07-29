@@ -18,6 +18,7 @@ import TabList from '@mui/lab/TabList'
 import TabPanel from '@mui/lab/TabPanel'
 import Tab from '@mui/material/Tab'
 import { useState } from 'preact/hooks'
+import { useTranslation } from '../../../i18n'
 
 export interface ShareType {
   type: 'received' | 'shared'
@@ -133,11 +134,12 @@ interface RecordListProps {
 
 function RecordList(props: RecordListProps) {
   const { list, onView, onDelete } = props
+  const i18n = useTranslation()
   if (!list.length)
     return (
       <Box className="flex items-center justify-center" sx={{ p: 4 }}>
         <Typography variant="caption" color="textDisabled">
-          记录为空
+          {i18n.t('history.empty')}
         </Typography>
       </Box>
     )
@@ -168,7 +170,11 @@ function RecordList(props: RecordListProps) {
             {!item.file && <TextFieldsIcon fontSize="medium" />}
           </ListItemIcon>
           <ListItemText
-            primary={<Typography>分享码 {item.code}，点击查看</Typography>}
+            primary={
+              <Typography>
+                {i18n.t('history.shareCodeClick', { code: item.code })}
+              </Typography>
+            }
             secondary={
               <Typography color="textDisabled" variant="caption">
                 {dayjs(item.date).fromNow()}
@@ -186,6 +192,7 @@ function RecordList(props: RecordListProps) {
 
 export const History = observer(({ onItemClick }: HistoryProps) => {
   const [tab, updateTab] = useState<'shared' | 'received'>('shared')
+  const i18n = useTranslation()
 
   const handleDelete = (e: MouseEvent, id: string) => {
     e.preventDefault()
@@ -202,7 +209,7 @@ export const History = observer(({ onItemClick }: HistoryProps) => {
   return (
     <Box className="flex flex-col h-full" sx={{ width: 320 }}>
       <Typography variant="h4" color="textDisabled" sx={{ p: 2 }}>
-        历史记录
+        {i18n.t('history.title')}
       </Typography>
       <TabContext value={tab}>
         <Box
@@ -210,8 +217,8 @@ export const History = observer(({ onItemClick }: HistoryProps) => {
           sx={{ borderBottom: 1, borderColor: 'divider' }}
         >
           <TabList onChange={(_e, tab) => updateTab(tab)}>
-            <Tab label="已分享" value="shared" />
-            <Tab label="已接收" value="received" />
+            <Tab label={i18n.t('history.shared')} value="shared" />
+            <Tab label={i18n.t('history.received')} value="received" />
           </TabList>
         </Box>
         <Box className="min-h-0 overflow-auto">

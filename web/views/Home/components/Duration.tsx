@@ -6,6 +6,9 @@ import { useState } from 'preact/hooks'
 import Box from '@mui/material/Box'
 import TextField from '@mui/material/TextField'
 import { ManipulateType } from 'dayjs'
+import { observer } from 'mobx-react-lite'
+
+import { useTranslation } from '../../../i18n'
 
 interface DurationProps {
   value?: string
@@ -17,41 +20,6 @@ const MAX_VALUE = '999year'
 
 const duration = ['day', 'week', 'month', 'year', 'hour', 'minute']
 // `minute`, `hour`, `day`, `week`, `month`, `year`
-const CONFIG = [
-  {
-    label: '默认',
-    value: DEFAULT_VALUE,
-  },
-  {
-    label: '分钟',
-    value: 'minute',
-  },
-  {
-    label: '小时',
-    value: 'hour',
-  },
-  {
-    label: '天',
-    value: 'day',
-  },
-  {
-    label: '周',
-    value: 'week',
-  },
-  {
-    label: '月',
-    value: 'month',
-  },
-  {
-    label: '年',
-    value: 'year',
-  },
-  {
-    label: '永久有效',
-    value: '999year',
-  },
-]
-
 function resolveDuration(str: string): [number, ManipulateType] {
   const match = new RegExp(`^(\\d+)(${duration.join('|')})$`).exec(str)
   if (!match) {
@@ -60,8 +28,43 @@ function resolveDuration(str: string): [number, ManipulateType] {
   return [Number.parseInt(match[1], 10), match[2] as ManipulateType]
 }
 
-export function Duration(props: DurationProps) {
+export const Duration = observer(function Duration(props: DurationProps) {
   const { value = '', onChange } = props
+  const i18n = useTranslation()
+  const config = [
+    {
+      label: i18n.t('duration.default'),
+      value: DEFAULT_VALUE,
+    },
+    {
+      label: i18n.t('duration.minute'),
+      value: 'minute',
+    },
+    {
+      label: i18n.t('duration.hour'),
+      value: 'hour',
+    },
+    {
+      label: i18n.t('duration.day'),
+      value: 'day',
+    },
+    {
+      label: i18n.t('duration.week'),
+      value: 'week',
+    },
+    {
+      label: i18n.t('duration.month'),
+      value: 'month',
+    },
+    {
+      label: i18n.t('duration.year'),
+      value: 'year',
+    },
+    {
+      label: i18n.t('duration.permanent'),
+      value: '999year',
+    },
+  ]
 
   const [count, updateCount] = useState(0)
   const [type, updateType] = useState(DEFAULT_VALUE)
@@ -160,16 +163,16 @@ export function Duration(props: DurationProps) {
             value={type}
             onChange={handleChange}
           >
-            {CONFIG.map((d) => (
-              <MenuItem key={d.label} value={d.value}>
+            {config.map((d) => (
+              <MenuItem key={d.value} value={d.value}>
                 {d.label}
               </MenuItem>
             ))}
           </Select>
         </Box>
       }
-      label="过期配置"
+      label={i18n.t('duration.expiryConfig')}
       labelPlacement="start"
     />
   )
-}
+})
