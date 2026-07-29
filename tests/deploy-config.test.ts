@@ -36,6 +36,7 @@ test('deployment script creates and binds the default optional R2 bucket', () =>
 test('deploy workflow verifies Worker bindings before deployment', () => {
   const workflow = read('.github/workflows/deploy.yml')
 
+  expect(workflow).toContain('node-version: 22')
   expect(workflow).toContain('pnpm exec tsc -p tsconfig.worker.json --noEmit')
   expect(workflow).toContain('D1_NAME: ${{ vars.D1_NAME || secrets.D1_NAME }}')
   expect(workflow).toContain('KV_NAMESPACE_NAME: ${{ vars.KV_NAMESPACE_NAME }}')
@@ -61,6 +62,9 @@ test('R2 deployment docs use the app binding and current storage limits', () => 
   expect(wranglerExample).toContain('# binding = "file_drops"')
   expect(wranglerExample).toContain('# binding = "FILES"')
   expect(wranglerExample).toContain('# bucket_name = "cloudflare-drop-files"')
+  expect(wranglerExample).toContain(
+    'Production bindings must be configured under [env.production]',
+  )
   expect(readme).toContain('R2_BUCKET')
   expect(readme).toContain('R2 的编辑权限')
   expect(readme).toContain('默认会自动确保 D1、KV，并尝试启用 R2')

@@ -1,4 +1,4 @@
-#:schema node_modules/wrangler/config-schema.json
+"$schema" = "./node_modules/wrangler/config-schema.json"
 name = "cloudflare-drop"
 main = "src/index.ts"
 compatibility_date = "2024-12-30"
@@ -119,3 +119,14 @@ enabled = true
 
 [env.production]
 assets = { directory = "./dist/", binding = "ASSETS", html_handling = "none", not_found_handling = "single-page-application" }
+
+# Production bindings must be configured under [env.production].
+# Wrangler environments do not inherit top-level vars or resource bindings.
+# prepare.sh fills these values during deployment:
+# route = { pattern = "airdrop.example.com", custom_domain = true }
+# workers_dev = true
+# d1_databases = [{ binding = "DB", database_name = "cloudflare-drop", database_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx", migrations_dir = "data/migrations" }]
+# kv_namespaces = [{ binding = "file_drops", id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" }]
+# r2_buckets = [{ binding = "FILES", bucket_name = "cloudflare-drop-files" }]
+# unsafe = { bindings = [{ name = "UPLOAD_LIMIT", type = "ratelimit", namespace_id = "1001", simple = { limit = 1, period = 10 } }, { name = "LOOKUP_LIMIT", type = "ratelimit", namespace_id = "1002", simple = { limit = 30, period = 60 } }] }
+# vars = { STORAGE_DRIVER = "auto" }
