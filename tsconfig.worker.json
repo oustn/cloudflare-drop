@@ -22,7 +22,11 @@
     "outDir": "",
     "target": "esnext",
     "module": "esnext",
-    "types": ["@types/node", "@types/service-worker-mock", "@cloudflare/workers-types/2023-07-01"],
+    "types": [
+      "@types/node",
+      "@types/service-worker-mock",
+      "@cloudflare/workers-types"
+    ],
     "paths": {
       "@data/*": ["./data/*"]
     }
