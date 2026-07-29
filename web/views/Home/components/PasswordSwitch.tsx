@@ -37,7 +37,7 @@ function PasswordDialog({
   const [result, setResult] = useState(password)
   const [show, setShow] = useState(false)
   const el = useRef<HTMLDivElement>(null)
-  const strength = showStrength && result ? passwordStrength(result) : null
+  const strength = showStrength ? passwordStrength(result) : null
 
   const handleClickShowPassword = () => setShow((show) => !show)
 
@@ -65,36 +65,42 @@ function PasswordDialog({
     <Dialog open={open} onClose={() => onClose(null)}>
       <DialogTitle>分享密码</DialogTitle>
       <DialogContent>
-        <OutlinedInput
-          ref={el}
-          placeholder="请输入分享密码"
-          type={show ? 'text' : 'password'}
-          endAdornment={
-            <InputAdornment position="end">
-              <IconButton
-                onClick={handleClickShowPassword}
-                onMouseDown={handleMouseDownPassword}
-                onMouseUp={handleMouseUpPassword}
-                edge="end"
-              >
-                {show ? <VisibilityOff /> : <Visibility />}
-              </IconButton>
-            </InputAdornment>
-          }
-          slotProps={{
-            input: {
-              // @ts-expect-error data-attr
-              'data-bwignore': 'off',
-              autocomplete: 'off',
-              'data-1p-ignore': true,
-              'data-lpignore': true,
-              'data-protonpass-ignore': true,
-            },
-          }}
-          fullWidth
-          value={result}
-          onChange={(event) => setResult(event.currentTarget.value)}
-        />
+        <div className="px-0.5 pt-1.5">
+          <OutlinedInput
+            ref={el}
+            placeholder="请输入分享密码"
+            type={show ? 'text' : 'password'}
+            name="share-password"
+            autoComplete="new-password"
+            endAdornment={
+              <InputAdornment position="end">
+                <IconButton
+                  onClick={handleClickShowPassword}
+                  onMouseDown={handleMouseDownPassword}
+                  onMouseUp={handleMouseUpPassword}
+                  edge="end"
+                >
+                  {show ? <VisibilityOff /> : <Visibility />}
+                </IconButton>
+              </InputAdornment>
+            }
+            slotProps={{
+              input: {
+                name: 'share-password',
+                autoComplete: 'new-password',
+                // @ts-expect-error data-attr
+                'data-bwignore': true,
+                'data-1p-ignore': true,
+                'data-lpignore': true,
+                'data-op-ignore': true,
+                'data-protonpass-ignore': true,
+              },
+            }}
+            fullWidth
+            value={result}
+            onChange={(event) => setResult(event.currentTarget.value)}
+          />
+        </div>
         {strength && (
           <FormHelperText component="div" sx={{ mt: 1.5 }}>
             <div className="flex flex-col gap-1 sm:flex-row sm:justify-between">
