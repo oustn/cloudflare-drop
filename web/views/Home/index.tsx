@@ -36,6 +36,7 @@ import { resolveFileByCode, uploadFile } from '../../api'
 import { Layout, LayoutProps } from '../../components'
 import { mapError } from '../../helpers'
 import { useTranslation } from '../../i18n'
+import { hasDroppedFolder } from './fileDrop'
 
 const VisuallyHiddenInput = styled('input')({
   clip: 'rect(0 0 0 0)',
@@ -103,8 +104,10 @@ export const AppMain = observer(function AppMain(props: LayoutProps) {
 
   const [text, setText] = useState('')
   const [file, setFile] = useState<File | null>(null)
+  const [isFileDragging, setFileDragging] = useState(false)
   const [code, setCode] = useState('')
   const resolvingCode = useRef<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
 
   const reset = useRef(() => {
     setText('')
@@ -152,15 +155,54 @@ export const AppMain = observer(function AppMain(props: LayoutProps) {
     setFile(null)
   }
 
+  const selectFile = (file: File | null) => {
+    if (file && file.size > MAX_SIZE * 1000 * 1000) {
+      message.error(i18n.t('home.fileTooLarge', { size: MAX_SIZE }))
+      return false
+    }
+    setFile(file)
+    return true
+  }
+
   const handleFileChange = (e: InputEvent) => {
     const target: HTMLInputElement = e.target as HTMLInputElement
     const file = target?.files?.[0] ?? null
-    if (file && file.size > MAX_SIZE * 1000 * 1000) {
-      message.error(i18n.t('home.fileTooLarge', { size: MAX_SIZE }))
-      ;(e.target as HTMLInputElement).value = ''
+    if (!selectFile(file)) target.value = ''
+  }
+
+  const handleFileDragOver = (event: Event) => {
+    event.preventDefault()
+    const dragEvent = event as DragEvent
+    if (hasDroppedFolder(dragEvent.dataTransfer)) {
+      if (dragEvent.dataTransfer) dragEvent.dataTransfer.dropEffect = 'none'
+      setFileDragging(false)
       return
     }
-    setFile(file)
+    if (dragEvent.dataTransfer) dragEvent.dataTransfer.dropEffect = 'copy'
+    setFileDragging(true)
+  }
+
+  const handleFileDragLeave = (event: Event) => {
+    event.preventDefault()
+    setFileDragging(false)
+  }
+
+  const handleFileDrop = (event: Event) => {
+    event.preventDefault()
+    setFileDragging(false)
+    const dragEvent = event as DragEvent
+    if (hasDroppedFolder(dragEvent.dataTransfer)) {
+      message.error(i18n.t('home.folderUploadNotSupported'))
+      return
+    }
+    const file = dragEvent.dataTransfer?.files?.[0] ?? null
+    if (file) selectFile(file)
+  }
+
+  const handleFileKeyDown = (event: KeyboardEvent) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return
+    event.preventDefault()
+    fileInputRef.current?.click()
   }
 
   const handleShare = async () => {
@@ -261,30 +303,68 @@ export const AppMain = observer(function AppMain(props: LayoutProps) {
                   onInput={handleTextInput}
                 />
               </TabPanel>
-              <TabPanel value="file" sx={{ height: 230, pl: 0, pr: 0, pb: 0 }}>
-                <Box className="flex">
-                  <Button
-                    className="shrink-0"
-                    component="label"
-                    role={undefined}
-                    variant="contained"
-                    tabIndex={-1}
-                    startIcon={<CloudUploadIcon />}
-                  >
-                    {i18n.t('home.selectFile')}
-                    <VisuallyHiddenInput
-                      type="file"
-                      onChange={handleFileChange}
+              <TabPanel value="file" sx={{ height: 230, pl: 0, pr: 0 }}>
+                <Box
+                  component="label"
+                  role="button"
+                  tabIndex={0}
+                  onDragEnter={handleFileDragOver}
+                  onDragOver={handleFileDragOver}
+                  onDragLeave={handleFileDragLeave}
+                  onDrop={handleFileDrop}
+                  onKeyDown={handleFileKeyDown}
+                  sx={(theme) => ({
+                    alignItems: 'center',
+                    border: '1px dashed',
+                    borderColor: isFileDragging
+                      ? theme.palette.primary.main
+                      : theme.palette.divider,
+                    borderRadius: 2,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    height: '100%',
+                    justifyContent: 'center',
+                    p: 2,
+                    textAlign: 'center',
+                    transition: theme.transitions.create(
+                      ['background-color', 'border-color'],
+                      {
+                        duration: theme.transitions.duration.shortest,
+                      },
+                    ),
+                    '&:hover': {
+                      backgroundColor: theme.palette.action.hover,
+                      borderColor: theme.palette.primary.main,
+                    },
+                  })}
+                >
+                  {file ? (
+                    <FileIcon color="disabled" sx={{ mb: 1, fontSize: 36 }} />
+                  ) : (
+                    <CloudUploadIcon
+                      color={isFileDragging ? 'primary' : 'disabled'}
+                      sx={{ mb: 1, fontSize: 36 }}
                     />
-                  </Button>
-                  {file && (
-                    <div class="flex flex-col ml-2 min-w-0">
-                      <FileIcon fontSize="small" color="disabled" />
-                      <Typography color="textDisabled" noWrap lineHeight="16px">
-                        {file.name}
-                      </Typography>
-                    </div>
                   )}
+                  <Typography
+                    color={file ? 'text.primary' : 'text.secondary'}
+                    noWrap
+                    variant="body2"
+                    sx={{ maxWidth: '100%' }}
+                  >
+                    {file ? file.name : i18n.t('home.dropFileHint')}
+                  </Typography>
+                  <Typography color="textDisabled" variant="caption">
+                    {file
+                      ? `${(file.size / (1000 * 1000)).toFixed(1)}M`
+                      : i18n.t('home.dropFileSubHint')}
+                  </Typography>
+                  <VisuallyHiddenInput
+                    ref={fileInputRef}
+                    type="file"
+                    onChange={handleFileChange}
+                  />
                 </Box>
               </TabPanel>
             </TabContext>

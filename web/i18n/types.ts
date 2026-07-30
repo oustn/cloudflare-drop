@@ -1,6 +1,4 @@
-export const SUPPORTED_LOCALES = ['zh-CN', 'zh-TW', 'en'] as const
-
-export type Locale = (typeof SUPPORTED_LOCALES)[number]
+export { DEFAULT_LOCALE, SUPPORTED_LOCALES, type Locale } from './config'
 
 export type TranslationParams = Record<
   string,

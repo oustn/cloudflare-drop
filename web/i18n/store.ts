@@ -3,24 +3,16 @@ import dayjs from 'dayjs'
 import 'dayjs/locale/zh-cn'
 import 'dayjs/locale/zh-tw'
 
+import { DEFAULT_LOCALE, LOCALE_CONFIG, SUPPORTED_LOCALES } from './config'
 import { LOCALES } from './locales'
 import {
   Locale,
-  SUPPORTED_LOCALES,
   TranslationParams,
   TranslationTree,
   TranslationValue,
 } from './types'
 
-export const DEFAULT_LOCALE: Locale = 'zh-CN'
-
 const STORAGE_KEY = 'cloudflare-drop-locale'
-
-const DAYJS_LOCALE: Record<Locale, string> = {
-  'zh-CN': 'zh-cn',
-  'zh-TW': 'zh-tw',
-  en: 'en',
-}
 
 export function isLocale(value: unknown): value is Locale {
   return (
@@ -69,7 +61,7 @@ function saveLocale(locale: Locale) {
 }
 
 function applyDocumentLocale(locale: Locale) {
-  dayjs.locale(DAYJS_LOCALE[locale])
+  dayjs.locale(LOCALE_CONFIG[locale].dayjsLocale)
   if (typeof document !== 'undefined') {
     document.documentElement.lang = locale
   }

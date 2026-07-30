@@ -5,20 +5,9 @@ import IconButton from '@mui/material/IconButton'
 import Menu from '@mui/material/Menu'
 import MenuItem from '@mui/material/MenuItem'
 
-import { Locale, SUPPORTED_LOCALES } from './types'
+import { LOCALE_CONFIG, SUPPORTED_LOCALES } from './config'
+import { Locale } from './types'
 import { useTranslation } from './useTranslation'
-
-const LOCALE_LABELS: Record<Locale, string> = {
-  'zh-CN': '简体中文',
-  'zh-TW': '繁體中文',
-  en: 'English',
-}
-
-const LOCALE_SHORT_LABELS: Record<Locale, string> = {
-  'zh-CN': '简',
-  'zh-TW': '繁',
-  en: 'EN',
-}
 
 export const LanguageSwitch = observer(function LanguageSwitch() {
   const i18n = useTranslation()
@@ -57,7 +46,7 @@ export const LanguageSwitch = observer(function LanguageSwitch() {
             lineHeight: 1,
           }}
         >
-          {LOCALE_SHORT_LABELS[i18n.locale]}
+          {LOCALE_CONFIG[i18n.locale].shortLabel}
         </Box>
       </IconButton>
       <Menu
@@ -73,7 +62,7 @@ export const LanguageSwitch = observer(function LanguageSwitch() {
             selected={locale === i18n.locale}
             onClick={() => handleSelect(locale)}
           >
-            {LOCALE_LABELS[locale]}
+            {LOCALE_CONFIG[locale].label}
           </MenuItem>
         ))}
       </Menu>

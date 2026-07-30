@@ -9,6 +9,8 @@ import {
   t,
 } from '../web/i18n'
 import { mapError } from '../web/helpers/errorMapper'
+import { LOCALES } from '../web/i18n/locales'
+import { LOCALE_CONFIG, SUPPORTED_LOCALES } from '../web/i18n/config'
 
 const layoutSource = readFileSync(
   new URL('../web/components/Layout.tsx', import.meta.url),
@@ -18,6 +20,23 @@ const languageSwitchSource = readFileSync(
   new URL('../web/i18n/LanguageSwitch.tsx', import.meta.url),
   'utf8',
 )
+const storeSource = readFileSync(
+  new URL('../web/i18n/store.ts', import.meta.url),
+  'utf8',
+)
+
+function flattenTranslationKeys(
+  tree: Record<string, unknown>,
+  prefix = '',
+): string[] {
+  return Object.entries(tree).flatMap(([key, value]) => {
+    const path = prefix ? `${prefix}.${key}` : key
+    if (value && typeof value === 'object') {
+      return flattenTranslationKeys(value as Record<string, unknown>, path)
+    }
+    return path
+  })
+}
 
 afterEach(() => {
   i18nStore.setLocale(DEFAULT_LOCALE)
@@ -46,6 +65,27 @@ describe('i18n locale selection', () => {
     expect(isLocale('en')).toBe(true)
     expect(isLocale('zh')).toBe(false)
   })
+
+  test('keeps locale metadata in one shared config', () => {
+    expect(SUPPORTED_LOCALES).toEqual(['zh-CN', 'zh-TW', 'en'])
+    expect(LOCALE_CONFIG).toEqual({
+      'zh-CN': {
+        label: '简体中文',
+        shortLabel: '简',
+        dayjsLocale: 'zh-cn',
+      },
+      'zh-TW': {
+        label: '繁體中文',
+        shortLabel: '繁',
+        dayjsLocale: 'zh-tw',
+      },
+      en: {
+        label: 'English',
+        shortLabel: 'EN',
+        dayjsLocale: 'en',
+      },
+    })
+  })
 })
 
 describe('i18n translations', () => {
@@ -71,6 +111,14 @@ describe('i18n translations', () => {
     expect(i18nStore.t('history.shareCodeClick', { code: '123456' })).toBe(
       'Share code 123456, click to view',
     )
+  })
+
+  test('keeps all locale packs aligned with the same translation keys', () => {
+    const zhCNKeys = flattenTranslationKeys(LOCALES['zh-CN']).sort()
+
+    for (const locale of SUPPORTED_LOCALES) {
+      expect(flattenTranslationKeys(LOCALES[locale]).sort()).toEqual(zhCNKeys)
+    }
   })
 })
 
@@ -108,10 +156,18 @@ test('layout exposes the language switch in the header', () => {
 test('language switch stays compact for mobile headers', () => {
   expect(languageSwitchSource).toContain('IconButton')
   expect(languageSwitchSource).toContain('Menu')
+  expect(languageSwitchSource).toContain('LOCALE_CONFIG')
   expect(languageSwitchSource).toContain('width: 40')
   expect(languageSwitchSource).toContain('height: 40')
+  expect(languageSwitchSource).not.toContain('const LOCALE_LABELS')
+  expect(languageSwitchSource).not.toContain('const LOCALE_SHORT_LABELS')
   expect(languageSwitchSource).not.toContain('FormControl')
   expect(languageSwitchSource).not.toContain('@mui/material/Select')
   expect(languageSwitchSource).not.toContain('<Select')
   expect(languageSwitchSource).not.toContain('minWidth: 118')
+})
+
+test('store uses shared locale metadata for dayjs configuration', () => {
+  expect(storeSource).toContain('LOCALE_CONFIG[locale].dayjsLocale')
+  expect(storeSource).not.toContain('const DAYJS_LOCALE')
 })

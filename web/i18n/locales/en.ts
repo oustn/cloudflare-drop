@@ -26,6 +26,10 @@ export const en = {
     textShare: 'Text share',
     fileShare: 'File share',
     selectFile: 'Select file',
+    dropFileHint: 'Drop a file here, or click to choose',
+    dropFileSubHint: 'Supports drag-and-drop and click upload',
+    folderUploadNotSupported:
+      'Folder upload is not supported. Please choose a single file.',
     burnAfterRead: 'Burn after reading',
     history: 'History',
     fileTooLarge: 'File is larger than {size}M',
