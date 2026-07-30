@@ -57,8 +57,6 @@ export const zhTW = {
     clearPassword: '清除密碼',
   },
   shareDialog: {
-    description: '連結: {url} 提取碼: {code}{hashPart}',
-    hashPart: ' SHA256 Hash 值: {hash}',
     title: '分享',
   },
   fileDialog: {

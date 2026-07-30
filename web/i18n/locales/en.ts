@@ -58,8 +58,6 @@ export const en = {
     clearPassword: 'Clear password',
   },
   shareDialog: {
-    description: 'Link: {url} Code: {code}{hashPart}',
-    hashPart: ' SHA256 hash: {hash}',
     title: 'Share',
   },
   fileDialog: {

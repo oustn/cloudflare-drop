@@ -57,8 +57,6 @@ export const zhCN = {
     clearPassword: '清空密码',
   },
   shareDialog: {
-    description: '链接: {url} 提取码: {code}{hashPart}',
-    hashPart: ' SHA256 Hash 值: {hash}',
     title: '分享',
   },
   fileDialog: {

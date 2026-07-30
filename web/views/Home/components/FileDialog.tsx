@@ -25,6 +25,7 @@ import { PasswordSwitch } from './PasswordSwitch.tsx'
 import LockClose from '@mui/icons-material/Lock'
 import LockOpen from '@mui/icons-material/LockOpen'
 import { useTranslation } from '../../../i18n'
+import { ShareQrCopyPanel } from './ShareQrCopyPanel.tsx'
 
 dayjs.extend(relativeTime)
 
@@ -56,6 +57,8 @@ export const FileDialog = observer(function FileDialog({
   const [encryptedText, setEncryptedText] = useState<Blob | null>(null)
 
   const showPassword = !password && payload.is_encrypted
+  const shouldShowShareQr = !payload.is_ephemeral
+  const shareUrl = `${window.location.protocol}//${window.location.host}?code=${payload.code}`
 
   const handleCopy = (str: string) => {
     copyToClipboard(str)
@@ -279,6 +282,9 @@ export const FileDialog = observer(function FileDialog({
           </Box>
         )}
         <Box sx={{ mt: 2 }}>
+          {shouldShowShareQr && (
+            <ShareQrCopyPanel shareUrl={shareUrl} message={payload.message} />
+          )}
           {!payload.is_encrypted && (
             <>
               <Typography variant="body2" color="textDisabled">
