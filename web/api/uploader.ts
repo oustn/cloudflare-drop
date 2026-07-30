@@ -75,7 +75,14 @@ export class Uploader {
         continue
       }
 
-      await this.uploadPart(session.sessionId, partNumber, new Blob([part]))
+      await this.uploadPart(
+        session.sessionId,
+        partNumber,
+        new Blob([part]),
+        uploaded,
+        payload.size,
+        onUpload,
+      )
       uploaded += bytes
       this.emitProgress(uploaded, payload.size, bytes, onUpload)
     }
@@ -140,7 +147,14 @@ export class Uploader {
       const start = index * session.partSize
       const end = Math.min(start + session.partSize, file.size)
       const chunk = file.slice(start, end)
-      await this.uploadPart(session.sessionId, partNumber, chunk)
+      await this.uploadPart(
+        session.sessionId,
+        partNumber,
+        chunk,
+        uploaded,
+        file.size,
+        onUpload,
+      )
       uploaded += chunk.size
       this.emitProgress(uploaded, file.size, chunk.size, onUpload)
     }
@@ -161,16 +175,26 @@ export class Uploader {
     sessionId: string,
     partNumber: number,
     chunk: Blob,
+    uploadedBeforePart: number,
+    total: number,
+    onUpload?: UploadCallback,
   ) {
-    const response = await fetch(
+    const { data } = await axios.put<ApiResponseType<unknown>>(
       `/files/uploads/${sessionId}/parts/${partNumber}`,
+      chunk,
       {
-        method: 'PUT',
         headers: { 'Content-Type': 'application/octet-stream' },
-        body: chunk,
+        onUploadProgress: (event) => {
+          this.emitProgress(
+            uploadedBeforePart + Math.min(event.loaded ?? 0, chunk.size),
+            total,
+            event.bytes ?? 0,
+            onUpload,
+          )
+        },
       },
     )
-    await readApiResponse(response)
+    if (!data.result) throw new Error(data.message)
   }
 
   private static async *streamParts(

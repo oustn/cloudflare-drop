@@ -1,5 +1,5 @@
 import { afterEach, expect, test, vi } from 'vitest'
-import axios from 'axios'
+import axios, { AxiosProgressEvent } from 'axios'
 
 import { uploadFile } from '../web/api'
 import { Uploader } from '../web/api/uploader'
@@ -14,6 +14,20 @@ function mockEncryptedSessionUpload() {
   vi.spyOn(Encryptor, 'encryptStream').mockResolvedValueOnce({
     stream: new Blob(['abcdef']).stream(),
     size: 6,
+  })
+  vi.spyOn(axios, 'put').mockImplementation(async (url, data, config) => {
+    expect(url).toMatch(/^\/files\/uploads\/encrypted-session\/parts\/\d$/)
+    expect(config?.headers).toMatchObject({
+      'Content-Type': 'application/octet-stream',
+    })
+    const partNumber = Number(url.toString().split('/').at(-1))
+    const expectedText = ['ab', 'cd', 'ef'][partNumber - 1]
+    await expect(new Response(data as BodyInit).text()).resolves.toBe(
+      expectedText,
+    )
+    return {
+      data: { result: true, data: { partNumber }, message: 'ok' },
+    }
   })
   return vi
     .spyOn(globalThis, 'fetch')
@@ -39,27 +53,6 @@ function mockEncryptedSessionUpload() {
           },
           message: 'ok',
         })
-      }
-      if (url === '/files/uploads/encrypted-session/parts/1') {
-        expect(init?.method).toBe('PUT')
-        await expect(new Response(init?.body as BodyInit).text()).resolves.toBe(
-          'ab',
-        )
-        return jsonResponse({ result: true, data: { partNumber: 1 } })
-      }
-      if (url === '/files/uploads/encrypted-session/parts/2') {
-        expect(init?.method).toBe('PUT')
-        await expect(new Response(init?.body as BodyInit).text()).resolves.toBe(
-          'cd',
-        )
-        return jsonResponse({ result: true, data: { partNumber: 2 } })
-      }
-      if (url === '/files/uploads/encrypted-session/parts/3') {
-        expect(init?.method).toBe('PUT')
-        await expect(new Response(init?.body as BodyInit).text()).resolves.toBe(
-          'ef',
-        )
-        return jsonResponse({ result: true, data: { partNumber: 3 } })
       }
       if (url === '/files/uploads/encrypted-session/complete') {
         expect(init?.method).toBe('POST')
@@ -144,7 +137,22 @@ test('large unencrypted uploads use the generic upload session API', async () =>
   const originalMaxUploadSize = Uploader.MAX_UPLOAD_SIZE
   Uploader.CHUNK_SIZE = 2
   Uploader.MAX_UPLOAD_SIZE = 20
-  const put = vi.spyOn(axios, 'put')
+  const put = vi
+    .spyOn(axios, 'put')
+    .mockImplementation(async (url, data, config) => {
+      expect(url).toMatch(/^\/files\/uploads\/session-1\/parts\/\d$/)
+      expect(config?.headers).toMatchObject({
+        'Content-Type': 'application/octet-stream',
+      })
+      const partNumber = Number(url.toString().split('/').at(-1))
+      const expectedText = ['ab', 'cd', 'ef'][partNumber - 1]
+      await expect(new Response(data as BodyInit).text()).resolves.toBe(
+        expectedText,
+      )
+      return {
+        data: { result: true, data: { partNumber }, message: 'ok' },
+      }
+    })
   const fetchMock = vi
     .spyOn(globalThis, 'fetch')
     .mockImplementation(async (input, init) => {
@@ -160,27 +168,6 @@ test('large unencrypted uploads use the generic upload session API', async () =>
           },
           message: 'ok',
         })
-      }
-      if (url === '/files/uploads/session-1/parts/1') {
-        expect(init?.method).toBe('PUT')
-        await expect(new Response(init?.body as BodyInit).text()).resolves.toBe(
-          'ab',
-        )
-        return jsonResponse({ result: true, data: { partNumber: 1 } })
-      }
-      if (url === '/files/uploads/session-1/parts/2') {
-        expect(init?.method).toBe('PUT')
-        await expect(new Response(init?.body as BodyInit).text()).resolves.toBe(
-          'cd',
-        )
-        return jsonResponse({ result: true, data: { partNumber: 2 } })
-      }
-      if (url === '/files/uploads/session-1/parts/3') {
-        expect(init?.method).toBe('PUT')
-        await expect(new Response(init?.body as BodyInit).text()).resolves.toBe(
-          'ef',
-        )
-        return jsonResponse({ result: true, data: { partNumber: 3 } })
       }
       if (url === '/files/uploads/session-1/complete') {
         expect(init?.method).toBe('POST')
@@ -209,6 +196,91 @@ test('large unencrypted uploads use the generic upload session API', async () =>
       expect.anything(),
     )
     expect(put).not.toHaveBeenCalledWith('/files', expect.anything())
+  } finally {
+    Uploader.CHUNK_SIZE = originalChunkSize
+    Uploader.MAX_UPLOAD_SIZE = originalMaxUploadSize
+  }
+})
+
+test('large upload parts use axios upload progress without changing the session API', async () => {
+  const originalChunkSize = Uploader.CHUNK_SIZE
+  const originalMaxUploadSize = Uploader.MAX_UPLOAD_SIZE
+  Uploader.CHUNK_SIZE = 2
+  Uploader.MAX_UPLOAD_SIZE = 20
+  const progress: number[] = []
+  const fetchMock = vi
+    .spyOn(globalThis, 'fetch')
+    .mockImplementation(async (input, init) => {
+      const url = input.toString()
+      if (url === '/files/uploads') {
+        expect(init?.method).toBe('POST')
+        return jsonResponse({
+          result: true,
+          data: {
+            sessionId: 'session-progress',
+            partSize: 2,
+            uploadedParts: [],
+          },
+          message: 'ok',
+        })
+      }
+      if (url === '/files/uploads/session-progress/complete') {
+        expect(init?.method).toBe('POST')
+        return jsonResponse({
+          result: true,
+          data: { id: 'file-id', code: '123456' },
+          message: 'ok',
+        })
+      }
+      throw new Error(`unexpected fetch ${url}`)
+    })
+  const put = vi
+    .spyOn(axios, 'put')
+    .mockImplementation(async (url, data, config) => {
+      expect(url).toMatch(/^\/files\/uploads\/session-progress\/parts\/\d$/)
+      expect(config?.headers).toMatchObject({
+        'Content-Type': 'application/octet-stream',
+      })
+      config?.onUploadProgress?.({
+        bytes: 1,
+        lengthComputable: true,
+        loaded: 1,
+        total: 2,
+        progress: 0.5,
+        upload: true,
+      } as AxiosProgressEvent)
+      await expect(new Response(data as BodyInit).text()).resolves.toMatch(
+        /^[abcdef]{2}$/,
+      )
+      return {
+        data: { result: true, data: { partNumber: 1 }, message: 'ok' },
+      }
+    })
+
+  try {
+    await expect(
+      uploadFile(
+        {
+          data: new File(['abcdef'], 'hello.txt', { type: 'text/plain' }),
+        },
+        (event) => progress.push(event.loaded ?? 0),
+      ),
+    ).resolves.toMatchObject({ result: true })
+
+    expect(fetchMock).toHaveBeenCalledWith('/files/uploads', expect.anything())
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/files/uploads/session-progress/complete',
+      expect.anything(),
+    )
+    expect(put).toHaveBeenCalledTimes(3)
+    expect(put).toHaveBeenCalledWith(
+      '/files/uploads/session-progress/parts/1',
+      expect.any(Blob),
+      expect.objectContaining({
+        onUploadProgress: expect.any(Function),
+      }),
+    )
+    expect(progress).toEqual([1, 2, 3, 4, 5, 6])
   } finally {
     Uploader.CHUNK_SIZE = originalChunkSize
     Uploader.MAX_UPLOAD_SIZE = originalMaxUploadSize
