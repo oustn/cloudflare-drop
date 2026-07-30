@@ -5,6 +5,7 @@ import z from 'zod'
 import { Endpoint } from '../endpoint'
 import { files } from '../../data/schemas'
 import { contentJson } from 'chanfana'
+import { storageForProvider } from '../storage'
 
 export class DeleteShare extends Endpoint {
   schema = {
@@ -32,6 +33,7 @@ export class DeleteShare extends Endpoint {
       .where(inArray(files.id, ids))
       .returning({
         objectId: files.objectId,
+        storageProvider: files.storage_provider,
       })
 
     if (!records.length) {
@@ -42,19 +44,9 @@ export class DeleteShare extends Endpoint {
       }
     }
 
-    const kv = this.getKV(c)
-
     await Promise.all(
       records.map(async (d) => {
-        const {
-          value: _,
-          metadata,
-        }: { value: unknown; metadata: Array<{ objectId: string }> | null } =
-          await kv.getWithMetadata(d.objectId, 'stream')
-        if (Array.isArray(metadata) && metadata.length) {
-          await Promise.all(metadata.map((d) => kv.delete(d.objectId)))
-        }
-        return kv.delete(d.objectId)
+        await storageForProvider(c.env, d.storageProvider).delete(d.objectId)
       }),
     )
 

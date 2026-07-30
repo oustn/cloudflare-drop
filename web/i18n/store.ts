@@ -1,5 +1,6 @@
 import { makeAutoObservable } from 'mobx'
 import dayjs from 'dayjs'
+import relativeTime from 'dayjs/plugin/relativeTime'
 import 'dayjs/locale/zh-cn'
 import 'dayjs/locale/zh-tw'
 
@@ -13,6 +14,8 @@ import {
 } from './types'
 
 const STORAGE_KEY = 'cloudflare-drop-locale'
+
+dayjs.extend(relativeTime)
 
 export function isLocale(value: unknown): value is Locale {
   return (

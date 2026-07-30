@@ -21,13 +21,15 @@ import { visuallyHidden } from '@mui/utils'
 import { useRoute } from 'preact-iso'
 import Info from '@mui/icons-material/InfoOutlined'
 import LockClose from '@mui/icons-material/Lock'
+import { ComponentChildren } from 'preact'
+import { useDialogs } from '@toolpad/core/useDialogs'
+import { observer } from 'mobx-react-lite'
+import dayjs from 'dayjs'
 
 import { Layout, LayoutProps } from '../../components'
 import { createAdminApi } from '../../api'
 import { humanFileSize } from '../../helpers'
-import dayjs from 'dayjs'
-import { ComponentChildren } from 'preact'
-import { useDialogs } from '@toolpad/core/useDialogs'
+import { useTranslation } from '../../i18n'
 
 function Div(props: { children?: ComponentChildren }) {
   return <div>{props.children}</div>
@@ -46,40 +48,50 @@ interface HeadCell {
 const headCells: readonly HeadCell[] = [
   {
     disablePadding: true,
-    label: '文件名',
+    label: 'admin.fileName',
   },
   {
     disablePadding: false,
-    label: '分享码',
+    label: 'admin.shareCode',
     width: 150,
   },
   {
     id: 'size',
     disablePadding: false,
-    label: '大小',
-    tooltip: '使用二进制单位：1 MiB = 1024 × 1024 字节，与 macOS 显示略有不同',
+    label: 'admin.size',
+    tooltip: 'admin.sizeTooltip',
     width: 150,
   },
   {
     id: 'due_date',
     disablePadding: false,
-    label: '有效期至',
+    label: 'admin.expiresAt',
     width: 150,
   },
   {
     disablePadding: true,
-    label: '是否加密',
+    label: 'admin.encrypted',
+    width: 100,
+  },
+  {
+    disablePadding: false,
+    label: 'admin.burnAfterRead',
+    width: 120,
+  },
+  {
+    disablePadding: false,
+    label: 'admin.storageProvider',
     width: 100,
   },
   {
     id: 'created_at',
     disablePadding: false,
-    label: '创建时间',
+    label: 'admin.createdAt',
     width: 150,
   },
   {
     disablePadding: true,
-    label: '操作',
+    label: 'admin.action',
     width: 100,
   },
 ]
@@ -91,6 +103,7 @@ interface EnhancedTableProps {
   order: Order
   orderBy: string
   rowCount: number
+  t: (key: string) => string
 }
 
 function EnhancedTableHead(props: EnhancedTableProps) {
@@ -101,6 +114,7 @@ function EnhancedTableHead(props: EnhancedTableProps) {
     numSelected,
     rowCount,
     onRequestSort,
+    t,
   } = props
   const createSortHandler = (property?: keyof FileType) => () => {
     if (property) {
@@ -124,7 +138,7 @@ function EnhancedTableHead(props: EnhancedTableProps) {
           return (
             <TableCell
               width={headCell.width}
-              key={headCell.id}
+              key={headCell.id ?? headCell.label}
               padding={headCell.disablePadding ? 'none' : 'normal'}
               sortDirection={orderBy === headCell.id ? order : false}
             >
@@ -133,9 +147,9 @@ function EnhancedTableHead(props: EnhancedTableProps) {
                 direction={orderBy === headCell.id ? order : 'asc'}
                 onClick={createSortHandler(headCell.id)}
               >
-                {headCell.label}
+                {t(headCell.label)}
                 {headCell.tooltip && (
-                  <Tooltip title={headCell.tooltip} arrow>
+                  <Tooltip title={t(headCell.tooltip)} arrow>
                     <Info color="disabled" sx={{ fontSize: '18px', ml: 1 }} />
                   </Tooltip>
                 )}
@@ -143,8 +157,8 @@ function EnhancedTableHead(props: EnhancedTableProps) {
                   // @ts-expect-error unknown
                   <Box component="span" sx={visuallyHidden}>
                     {order === 'desc'
-                      ? 'sorted descending'
-                      : 'sorted ascending'}
+                      ? t('admin.sortedDescending')
+                      : t('admin.sortedAscending')}
                   </Box>
                 ) : null}
               </Comp>
@@ -159,6 +173,9 @@ function EnhancedTableHead(props: EnhancedTableProps) {
 interface EnhancedTableToolbarProps {
   numSelected: number
   onDelete: (event: Event) => void
+  title: string
+  selectedLabel: string
+  batchDeleteLabel: string
 }
 
 function EnhancedTableToolbar(props: EnhancedTableToolbarProps) {
@@ -188,7 +205,7 @@ function EnhancedTableToolbar(props: EnhancedTableToolbarProps) {
           variant="subtitle1"
           component="div"
         >
-          选中 {numSelected}
+          {props.selectedLabel}
         </Typography>
       ) : (
         <Typography
@@ -197,11 +214,11 @@ function EnhancedTableToolbar(props: EnhancedTableToolbarProps) {
           id="tableTitle"
           component="div"
         >
-          分享列表
+          {props.title}
         </Typography>
       )}
       {numSelected > 0 && (
-        <Tooltip title="批量删除">
+        <Tooltip title={props.batchDeleteLabel}>
           <IconButton onClick={props.onDelete}>
             <DeleteIcon />
           </IconButton>
@@ -217,12 +234,21 @@ interface AdminProps extends LayoutProps {
 
 const DATE_FORMAT = 'YYYY-MM-DD HH:mm:ss'
 
-function AdminMain(props: AdminProps) {
+function formatStorageProvider(
+  provider: FileType['storage_provider'],
+  t: (key: string) => string,
+) {
+  return provider === 'r2' ? t('admin.r2Storage') : t('admin.kvStorage')
+}
+
+const AdminMain = observer(function AdminMain(props: AdminProps) {
   const setBackdropOpen = props.setBackdropOpen!
   const message = props.message!
   const token = props.token
   const adminApi = createAdminApi(token)
   const dialogs = useDialogs()
+  const i18n = useTranslation()
+  const t = i18n.t
 
   const [order, setOrder] = React.useState<Order>('desc')
   const [orderBy, setOrderBy] = React.useState<keyof FileType>('created_at')
@@ -305,14 +331,11 @@ function AdminMain(props: AdminProps) {
 
   const createRemoveHandler = (id?: string) => async (event: Event) => {
     event.stopPropagation()
-    const confirmed = await dialogs.confirm(
-      '删除后无法恢复，请确认是否删除？',
-      {
-        okText: '确认',
-        cancelText: '取消',
-        title: !id ? '批量删除' : '删除分享',
-      },
-    )
+    const confirmed = await dialogs.confirm(t('admin.deleteConfirm'), {
+      okText: t('common.confirm'),
+      cancelText: t('common.cancel'),
+      title: !id ? t('admin.batchDelete') : t('admin.deleteShare'),
+    })
     if (confirmed) {
       setBackdropOpen(true)
       const data = await adminApi.delete(id ?? selected)
@@ -341,10 +364,13 @@ function AdminMain(props: AdminProps) {
         <EnhancedTableToolbar
           numSelected={selected.length}
           onDelete={createRemoveHandler()}
+          title={t('admin.shareList')}
+          selectedLabel={t('admin.selectedCount', { count: selected.length })}
+          batchDeleteLabel={t('admin.batchDelete')}
         />
         <TableContainer>
           <Table
-            sx={{ minWidth: 750 }}
+            sx={{ minWidth: 980 }}
             aria-labelledby="tableTitle"
             size={'medium'}
           >
@@ -355,6 +381,7 @@ function AdminMain(props: AdminProps) {
               onSelectAllClick={handleSelectAllClick}
               onRequestSort={handleRequestSort}
               rowCount={rows.length}
+              t={t}
             />
             <TableBody>
               {rows.map((row, index) => {
@@ -393,7 +420,9 @@ function AdminMain(props: AdminProps) {
                         title={row.filename}
                         className="text-ellipsis text-nowrap overflow-hidden"
                       >
-                        {row.type === 'plain/string' ? '[文本]' : row.filename}
+                        {row.type === 'plain/string'
+                          ? t('admin.textShare')
+                          : row.filename}
                       </Typography>
                     </TableCell>
                     <TableCell>{row.code}</TableCell>
@@ -403,13 +432,13 @@ function AdminMain(props: AdminProps) {
                         title={
                           row.due_date
                             ? dayjs(row.due_date).format(DATE_FORMAT)
-                            : '永久有效'
+                            : t('admin.permanent')
                         }
                       >
                         <span>
                           {row.due_date
                             ? dayjs(row.due_date).fromNow()
-                            : '永久有效'}
+                            : t('admin.permanent')}
                         </span>
                       </Tooltip>
                     </TableCell>
@@ -419,8 +448,18 @@ function AdminMain(props: AdminProps) {
                       )}
                     </TableCell>
                     <TableCell>
+                      {row.is_ephemeral ? t('admin.yes') : t('admin.no')}
+                    </TableCell>
+                    <TableCell>
+                      {formatStorageProvider(row.storage_provider, t)}
+                    </TableCell>
+                    <TableCell>
                       <Tooltip
-                        title={dayjs(row.created_at).format(DATE_FORMAT)}
+                        title={
+                          row.created_at
+                            ? dayjs(row.created_at).format(DATE_FORMAT)
+                            : ''
+                        }
                       >
                         <span>
                           {row.created_at
@@ -431,7 +470,7 @@ function AdminMain(props: AdminProps) {
                     </TableCell>
                     <TableCell padding="none">
                       <IconButton
-                        aria-label="delete"
+                        aria-label={t('admin.deleteAction')}
                         onClick={createRemoveHandler(row.id)}
                       >
                         <DeleteIcon color="action" />
@@ -446,7 +485,7 @@ function AdminMain(props: AdminProps) {
                     height: 53 * emptyRows,
                   }}
                 >
-                  <TableCell colSpan={6} />
+                  <TableCell colSpan={headCells.length + 1} />
                 </TableRow>
               )}
             </TableBody>
@@ -455,9 +494,9 @@ function AdminMain(props: AdminProps) {
         <TablePagination
           className="flex-shrink-0"
           labelDisplayedRows={({ from, to, count }) =>
-            `${from} - ${to} 共 ${count} 条`
+            t('admin.displayedRows', { from, to, count })
           }
-          labelRowsPerPage="分页大小"
+          labelRowsPerPage={t('admin.rowsPerPage')}
           rowsPerPageOptions={[10]}
           component="div"
           count={total}
@@ -469,7 +508,7 @@ function AdminMain(props: AdminProps) {
       </Paper>
     </Box>
   )
-}
+})
 
 export function Admin() {
   const { params } = useRoute()

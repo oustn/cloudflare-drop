@@ -8,6 +8,7 @@ interface FileType {
   size: number
   is_ephemeral?: boolean
   is_encrypted?: boolean
+  storage_provider?: 'kv' | 'r2' | string
   created_at: number
 }
 

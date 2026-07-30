@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs'
+import dayjs from 'dayjs'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 
 import {
@@ -22,6 +23,10 @@ const languageSwitchSource = readFileSync(
 )
 const storeSource = readFileSync(
   new URL('../web/i18n/store.ts', import.meta.url),
+  'utf8',
+)
+const adminSource = readFileSync(
+  new URL('../web/views/Admin/index.tsx', import.meta.url),
   'utf8',
 )
 
@@ -103,6 +108,23 @@ describe('i18n translations', () => {
     expect(i18nStore.t('duration.expiryConfig')).toBe('Expiration')
   })
 
+  test('translates admin UI copy and status labels', () => {
+    i18nStore.setLocale('zh-CN')
+    expect(i18nStore.t('admin.shareList')).toBe('分享列表')
+    expect(i18nStore.t('admin.storageProvider')).toBe('存储')
+    expect(i18nStore.t('admin.burnAfterRead')).toBe('阅后即焚')
+
+    i18nStore.setLocale('zh-TW')
+    expect(i18nStore.t('admin.shareList')).toBe('分享列表')
+    expect(i18nStore.t('admin.storageProvider')).toBe('儲存')
+    expect(i18nStore.t('admin.burnAfterRead')).toBe('閱後即焚')
+
+    i18nStore.setLocale('en')
+    expect(i18nStore.t('admin.shareList')).toBe('Shares')
+    expect(i18nStore.t('admin.storageProvider')).toBe('Storage')
+    expect(i18nStore.t('admin.burnAfterRead')).toBe('Burn after reading')
+  })
+
   test('supports interpolation for repeated UI messages', () => {
     i18nStore.setLocale('en')
     expect(i18nStore.t('home.fileTooLarge', { size: 50 })).toBe(
@@ -170,4 +192,21 @@ test('language switch stays compact for mobile headers', () => {
 test('store uses shared locale metadata for dayjs configuration', () => {
   expect(storeSource).toContain('LOCALE_CONFIG[locale].dayjsLocale')
   expect(storeSource).not.toContain('const DAYJS_LOCALE')
+})
+
+test('i18n bootstrap initializes dayjs relative time before dialogs are loaded', () => {
+  const value = dayjs(new Date(Date.now() - 60_000)) as dayjs.Dayjs & {
+    fromNow?: () => string
+  }
+
+  expect(value.fromNow).toBeTypeOf('function')
+})
+
+test('admin view uses i18n keys for labels and includes storage/ephemeral columns', () => {
+  expect(adminSource).toContain('observer(function AdminMain')
+  expect(adminSource).toContain("'admin.storageProvider'")
+  expect(adminSource).toContain("'admin.burnAfterRead'")
+  expect(adminSource).toContain("'admin.shareList'")
+  expect(adminSource).not.toContain("label: '文件名'")
+  expect(adminSource).not.toContain("'删除后无法恢复，请确认是否删除？'")
 })
