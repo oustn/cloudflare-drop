@@ -3,7 +3,7 @@ import { observer } from 'mobx-react-lite'
 import TextField from '@mui/material/TextField'
 import Box from '@mui/material/Box'
 
-import { applyDigits, digitsOnly } from './codeInput'
+import { applyDigits, extractShareCodeDigits } from './codeInput'
 import { useTranslation } from '../../../i18n'
 
 interface CodeProps {
@@ -14,10 +14,9 @@ interface CodeProps {
 }
 
 function toValues(value: string | undefined, length: number, disabled = false) {
-  const code = (disabled ? (value ?? '') : digitsOnly(value ?? '')).slice(
-    0,
-    length,
-  )
+  const code = (
+    disabled ? (value ?? '') : extractShareCodeDigits(value ?? '')
+  ).slice(0, length)
   return [...code, ...new Array(Math.max(length - code.length, 0)).fill('')]
 }
 
@@ -58,7 +57,7 @@ export const Code = observer(function Code({
     if (disabled || composing.current) return
     const target = event.target
     if (!(target instanceof HTMLInputElement)) return
-    const entered = digitsOnly(target.value)
+    const entered = extractShareCodeDigits(target.value)
     const result = applyDigits(codes, index, entered)
     target.value = result.values[index]
     setCodes(result.values)
